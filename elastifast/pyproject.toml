@@ -9,6 +9,9 @@ readme = "README.md"
 python = "^3.11"
 elasticsearch = {extras = ["async"], version = "^8.15.0"}
 fastapi = "^0.112.1"
+celery = "^5.4.0"
+elastic-apm = "^6.23.0"
+ecs-logging = "^2.2.0"
 
 
 [tool.poetry.group.dev.dependencies]
