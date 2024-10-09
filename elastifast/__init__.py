@@ -1,4 +1,5 @@
-import configparser
+from fastapi import FastAPI
+from .settings import load_settings
 
-config = configparser.ConfigParser()
-config.read("config.ini")
+settings = load_settings()
+app = FastAPI()

@@ -1,1 +1,23 @@
+# Ignore compiled Python files
+*.pyc
+*.pyo
+
+# Ignore virtual environment files
+venv/
+env/
+.env
+
+# Ignore IDE-specific files
+.idea/
+.pycharm/
+
+# Ignore operating system-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore config files in the config directory
+config/*.ini
+
+# Ignore other files and directories
+__pycache__
 config.ini
