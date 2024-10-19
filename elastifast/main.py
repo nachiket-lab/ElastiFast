@@ -1,11 +1,10 @@
 from fastapi.responses import JSONResponse
-from elastifast import app, logger
+from elastifast import logger, app
 from tasks import ingest_data_to_elasticsearch
 from elastifast.models.elasticsearch import ElasticsearchClient
 from typing import Dict, Any
 from fastapi import Response, status
 from elasticsearch.exceptions import ConnectionError, NotFoundError, RequestError, TransportError
-
 
 # Define a FastAPI endpoint to trigger the Celery task
 @app.post("/ingest_data")
@@ -43,7 +42,7 @@ async def healthcheck(response: Response) -> Dict[str, Any]:
     Returns:
         A dictionary containing the health information of the Elasticsearch cluster.
     """
-    logger.info("Health check triggered")
+    logger.debug("Health check triggered")
     try:
         es = ElasticsearchClient()
         if es.client is None:

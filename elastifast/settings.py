@@ -12,6 +12,10 @@ from starlette.applications import Starlette
 import logging
 import ecs_logging
 
+import elastifast
+# from elasticapm import Client
+
+
 
 def create_ecs_logger():
     """
@@ -54,10 +58,28 @@ class Settings(BaseSettings):
     elasticsearch_verify_certs: Optional[bool] = True
     celery_broker_url: AnyUrl
     celery_result_backend: AnyUrl
+    elasticapm_service_name: Optional[str] = "elastifast"
+    elasticapm_server_url: Optional[str] = None
+    elasticapm_secret_token: Optional[str] = None
+    elasticapm_environment: Optional[str] = "production"
 
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
+
+    @property
+    def apm_client(self):
+        if (
+            self.elasticapm_service_name
+            and self.elasticapm_server_url
+            and self.elasticapm_secret_token
+        ):
+            return make_apm_client({
+                "SERVICE_NAME": self.elasticapm_service_name,
+                "SERVER_URL": self.elasticapm_server_url,
+                "SECRET_TOKEN": self.elasticapm_secret_token})
+        else:
+            return None
 
     @property
     def elasticsearch_url(self) -> AnyUrl:
