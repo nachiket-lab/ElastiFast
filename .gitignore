@@ -6,6 +6,8 @@
 venv/
 env/
 .env
+settings.yaml
+.env_backup
 
 # Ignore IDE-specific files
 .idea/

@@ -19,18 +19,22 @@ class ElasticsearchClient(object):
         Raises:
             ConnectionError: If the Elasticsearch client cannot be created.
         """
-        self.client = Elasticsearch(
+        self.client = self._create_elasticsearch_client()
+
+    def _create_elasticsearch_client(self):
+        auth_kwargs = {}
+        if settings.elasticsearch_auth_method == "basic":
+            auth_kwargs = {
+                "http_auth": (settings.elasticsearch_username, settings.elasticsearch_password)
+            }
+        elif settings.elasticsearch_auth_method == "api_key":
+            auth_kwargs = {
+                "api_key": (settings.elasticsearch_api_key_id, settings.elasticsearch_api_key)
+            }
+
+        return Elasticsearch(
             hosts=[settings.elasticsearch_url],
             verify_certs=settings.elasticsearch_verify_certs,
-            ca_certs=settings.elasticsearch_ssl_ca
+            ca_certs=settings.elasticsearch_ssl_ca,
+            **auth_kwargs
         )
-        self.myname = "elasticsearch"
-
-    def __repr__(self) -> str:
-        """
-        Returns a string representation of the ElasticsearchClient object.
-
-        Returns:
-            str: The string representation.
-        """
-        return f"ElasticsearchClient(name={self.name})"
