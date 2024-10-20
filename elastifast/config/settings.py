@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings
 from fastapi import FastAPI
 from celery import Celery
 from elasticsearch import Elasticsearch
-from elasticapm.contrib.starlette import make_apm_client, ElasticAPM
+from elasticapm.contrib.starlette import ElasticAPM, make_apm_client
 from starlette.applications import Starlette
 import logging
 import ecs_logging
