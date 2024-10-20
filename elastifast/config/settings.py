@@ -1,4 +1,3 @@
-import os
 from typing import Optional
 from typing_extensions import Self
 import yaml
@@ -11,10 +10,6 @@ from elasticapm.contrib.starlette import make_apm_client, ElasticAPM
 from starlette.applications import Starlette
 import logging
 import ecs_logging
-
-import elastifast
-# from elasticapm import Client
-
 
 
 def create_ecs_logger():

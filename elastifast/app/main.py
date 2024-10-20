@@ -1,6 +1,6 @@
 from fastapi.responses import JSONResponse
-from elastifast import logger, app
-from tasks import ingest_data_to_elasticsearch
+from elastifast.app import logger, app
+from elastifast.tasks import ingest_data_to_elasticsearch
 from elastifast.models.elasticsearch import ElasticsearchClient
 from typing import Dict, Any
 from fastapi import Response, status

@@ -3,7 +3,7 @@ import os, sys
 from celery import shared_task
 from celery import Celery
 from elasticapm.contrib.celery import register_exception_tracking, register_instrumentation
-from elastifast import settings, logger
+from elastifast.app import settings, logger
 from elastifast.models.elasticsearch import ElasticsearchClient
 
 esclient = ElasticsearchClient()

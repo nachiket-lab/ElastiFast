@@ -1,6 +1,5 @@
-from math import log
 from fastapi import FastAPI
-from .settings import load_settings, logger
+from elastifast.config.settings import load_settings, logger
 from elasticapm.contrib.starlette import ElasticAPM
 
 logger = logger
