@@ -1,10 +1,36 @@
 from fastapi.responses import JSONResponse
-from elastifast.app import logger, app
+from elastifast.app import logger, settings
 from elastifast.tasks import ingest_data_to_elasticsearch
 from elastifast.models.elasticsearch import ElasticsearchClient
 from typing import Dict, Any
-from fastapi import Response, status
+from fastapi import Response, status, FastAPI
 from elasticsearch.exceptions import ConnectionError, NotFoundError, RequestError, TransportError
+from elasticapm.contrib.starlette import ElasticAPM
+
+
+app = FastAPI()
+
+if (
+    settings.elasticapm_service_name and
+    settings.elasticapm_server_url and
+    settings.elasticapm_secret_token
+):
+    try:
+        # apm_client  = make_apm_client({
+        #     "SERVICE_NAME": settings.elasticapm_service_name,
+        #     "SERVER_URL": settings.elasticapm_server_url,
+        #     "SECRET_TOKEN": settings.elasticapm_secret_token
+        # })
+        app.add_middleware(
+            ElasticAPM,
+            client=settings.apm_client
+        )
+        logger.info("ElasticAPM initialized")
+    except Exception as e:
+        logger.error(f"Error initializing ElasticAPM: {e}")
+        raise
+else:
+    logger.info("ElasticAPM not initialized due to missing configuration values under elasticapm_*")
 
 # Define a FastAPI endpoint to trigger the Celery task
 @app.post("/ingest_data")

@@ -8,13 +8,14 @@ from elastifast.models.elasticsearch import ElasticsearchClient
 
 esclient = ElasticsearchClient()
 
+# Register the Celery instrumentation
 if os.environ.get("CELERY_WORKER_RUNNING") is not None or 'worker' in sys.argv:
     register_instrumentation(settings.apm_client)
     register_exception_tracking(settings.apm_client)
     logger.info("ElasticAPM initialized in Celery worker")
 else:
     logger.info("ElasticAPM initialized in non-worker mode")
-# Register the Celery instrumentation
+
 # register_instrumentation(settings.apm_client)
 # register_exception_tracking(settings.apm_client)
 
@@ -25,4 +26,4 @@ celery = Celery("NSE", broker=str(settings.celery_broker_url), backend=str(setti
 def ingest_data_to_elasticsearch(data: dict):
     # Use the db and es clients to ingest the data into Elasticsearch
     sleep(1)
-    logger.info({"data": data})
+    logger.info({"data": data, "esclient": esclient.info()})
