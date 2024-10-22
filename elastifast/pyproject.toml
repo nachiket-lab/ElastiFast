@@ -15,6 +15,7 @@ ecs-logging = "^2.2.0"
 pydantic-settings = "^2.5.2"
 uvicorn = "^0.31.0"
 redis = "^5.1.1"
+flower = "^2.0.1"
 
 
 [tool.poetry.group.dev.dependencies]

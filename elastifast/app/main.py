@@ -1,6 +1,7 @@
 from fastapi.responses import JSONResponse
 from elastifast.app import logger, settings
 from elastifast.tasks import ingest_data_to_elasticsearch
+from elastifast.tasks.monitor import get_celery_tasks
 from elastifast.models.elasticsearch import ElasticsearchClient
 from typing import Dict, Any
 from fastapi import Response, status, FastAPI
@@ -98,3 +99,14 @@ async def healthcheck(response: Response) -> Dict[str, Any]:
         logger.error(f"Unexpected error: {e}, Response Object: {str(res)}")
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         return {"error": "An unexpected error occurred."}
+
+
+@app.get("/tasks")
+async def tasks(response: Response) -> Dict[str, Any]:
+    """
+    Endpoint to return the list of running tasks.
+
+    Returns:
+        A dictionary containing the list of running tasks.
+    """
+    return get_celery_tasks()

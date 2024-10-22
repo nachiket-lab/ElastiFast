@@ -20,10 +20,11 @@ else:
 # register_exception_tracking(settings.apm_client)
 
 # Create a Celery app
-celery = Celery("NSE", broker=str(settings.celery_broker_url), backend=str(settings.celery_result_backend))
+celery_app = Celery("NSE", broker=str(settings.celery_broker_url), backend=str(settings.celery_result_backend))
 
 @shared_task
 def ingest_data_to_elasticsearch(data: dict):
     # Use the db and es clients to ingest the data into Elasticsearch
     sleep(1)
     logger.info({"data": data, "esclient": esclient.info()})
+    return({"data": data})

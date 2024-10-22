@@ -135,9 +135,9 @@ class Settings(BaseSettings):
 
     @field_validator("celery_result_backend")
     def validate_celery_result_backend(cls, value):
-        if not value.scheme in ["redis", "amqp", "amqps", "sqs"]:
+        if not value.scheme in ["redis", "amqp", "amqps", "sqs", "elasticsearch", "elasticsearch+https"]:
             raise ValueError(
-                "Invalid Celery result backend. Must be one of: redis, amqp, amqps, sqs."
+                "Invalid Celery result backend. Must be one of: redis, amqp, amqps, sqs, elasticsearch."
             )
         return value
 
