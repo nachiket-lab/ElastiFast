@@ -11,6 +11,7 @@ from starlette.applications import Starlette
 import logging
 import ecs_logging
 
+
 def create_ecs_logger():
     """
     Creates a logger that logs messages in ECS format (https://www.elastic.co/guide/en/ecs/current/index.html).
@@ -58,6 +59,9 @@ class Settings(BaseSettings):
     elasticapm_environment: Optional[str] = "production"
     atlassian_org_id: Optional[str] = None
     atlassian_secret_token: Optional[str] = None
+    celery_pipeline_id: Optional[str] = "logs-celery.results"
+    celery_index_template_name: Optional[str] = "logs-celery.results"
+    celery_index_patterns: Optional[list] = ["logs-celery.results-*"]
 
     class Config:
         env_file = ".env"
@@ -70,10 +74,13 @@ class Settings(BaseSettings):
             and self.elasticapm_server_url
             and self.elasticapm_secret_token
         ):
-            return make_apm_client({
-                "SERVICE_NAME": self.elasticapm_service_name,
-                "SERVER_URL": self.elasticapm_server_url,
-                "SECRET_TOKEN": self.elasticapm_secret_token})
+            return make_apm_client(
+                {
+                    "SERVICE_NAME": self.elasticapm_service_name,
+                    "SERVER_URL": self.elasticapm_server_url,
+                    "SECRET_TOKEN": self.elasticapm_secret_token,
+                }
+            )
         else:
             return None
 
@@ -136,7 +143,14 @@ class Settings(BaseSettings):
 
     @field_validator("celery_result_backend")
     def validate_celery_result_backend(cls, value):
-        if not value.scheme in ["redis", "amqp", "amqps", "sqs", "elasticsearch", "elasticsearch+https"]:
+        if not value.scheme in [
+            "redis",
+            "amqp",
+            "amqps",
+            "sqs",
+            "elasticsearch",
+            "elasticsearch+https",
+        ]:
             raise ValueError(
                 "Invalid Celery result backend. Must be one of: redis, amqp, amqps, sqs, elasticsearch."
             )
