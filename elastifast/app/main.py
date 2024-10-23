@@ -1,10 +1,11 @@
 from fastapi.responses import JSONResponse
+from celery.result import AsyncResult
 from elastifast.app import logger, settings
-from elastifast.tasks import ingest_data_to_elasticsearch
+from elastifast.tasks import ingest_data_to_elasticsearch, ingest_data_from_atlassian
 from elastifast.tasks.monitor import get_celery_tasks
 from elastifast.models.elasticsearch import ElasticsearchClient
 from typing import Dict, Any
-from fastapi import Response, status, FastAPI
+from fastapi import Response, status, FastAPI, Query
 from elasticsearch.exceptions import ConnectionError, NotFoundError, RequestError, TransportError
 from elasticapm.contrib.starlette import ElasticAPM
 
@@ -110,3 +111,21 @@ async def tasks(response: Response) -> Dict[str, Any]:
         A dictionary containing the list of running tasks.
     """
     return get_celery_tasks()
+
+@app.get("/atlassian")
+async def atlassian_data(
+    delta: int = Query(5, ge=0, le=360, description="Time delta in minutes (0 to 360)")
+) -> Dict[str, Any]:
+    # Trigger the Celery task with the delta value
+    task = ingest_data_from_atlassian.delay(delta)
+    
+    # Create an AsyncResult object to track the task
+    task_result = AsyncResult(task.id)
+
+    # Return the task details
+    return {
+        "task_id": task.id,
+        "task_name": ingest_data_from_atlassian.name,  # Get the task name from the task itself
+        "task_status": task_result.status,
+        "task_result": task_result.result  # This will be None if the task hasn't finished yet
+    }

@@ -11,7 +11,6 @@ from starlette.applications import Starlette
 import logging
 import ecs_logging
 
-
 def create_ecs_logger():
     """
     Creates a logger that logs messages in ECS format (https://www.elastic.co/guide/en/ecs/current/index.html).
@@ -57,6 +56,8 @@ class Settings(BaseSettings):
     elasticapm_server_url: Optional[str] = None
     elasticapm_secret_token: Optional[str] = None
     elasticapm_environment: Optional[str] = "production"
+    atlassian_org_id: Optional[str] = None
+    atlassian_secret_token: Optional[str] = None
 
     class Config:
         env_file = ".env"
