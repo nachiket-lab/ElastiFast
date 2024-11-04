@@ -1,6 +1,5 @@
-from math import e
-from operator import index
-from re import template
+from elastifast.app import logger
+from elasticsearch import NotFoundError
 from elastifast.models.elasticsearch import ElasticsearchClient
 
 es = ElasticsearchClient().client
@@ -86,37 +85,38 @@ def ensure_pipeline(pipeline_id):
         ],
     }
     try:
-        if not es.ingest.get_pipeline(id=pipeline_id):
+        es.ingest.get_pipeline(id=pipeline_id)
+    except NotFoundError as e:
+        logger.info(f"Pipeline with {pipeline_id} not found. Creating new pipeline.")
+        try: 
             es.ingest.put_pipeline(id=pipeline_id, body=ingest_pipeline)
-            print(f"Pipeline '{pipeline_id}' created.")
-        else:
-            print(f"Pipeline '{pipeline_id}' already exists.")
+        except Exception as e:
+            logger.error(f"Error creating pipeline: {e}")
     except Exception as e:
-        print(f"Error checking/creating pipeline: {e}")
+        logger.error(f"Error checking/creating pipeline: {e}")
 
 
 def ensure_index_template(template_name, pipeline_id, index_patterns):
     index_template = {
-        "priority": 100,
+        "priority": 200,
         "template": {
             "settings": {"index": {"default_pipeline": pipeline_id}},
             "mappings": {"properties": {"result": {"type": "flattened"}}},
         },
-        "index_patterns": [index_patterns],
+        "index_patterns": index_patterns,
         "data_stream": {"hidden": False, "allow_custom_routing": False},
         "composed_of": ["ecs@mappings"],
         "allow_auto_create": True,
     }
     try:
         if not es.indices.exists_template(name=template_name):
-            es.indices.put_template(name=template_name, body=index_template)
-            print(f"Index template '{template_name}' created.")
+            es.indices.put_index_template(name=template_name, body=index_template)
+            logger.info(f"Index template '{template_name}' created.")
         else:
-            print(f"Index template '{template_name}' already exists.")
+            logger.debug(f"Index template '{template_name}' already exists.")
     except Exception as e:
         print(f"Error checking/creating index template: {e}")
 
-
-def ensure_es_deps(pipeline_id, template_name, index_patterns):
+def ensure_es_deps(template_name, pipeline_id, index_patterns):
     ensure_pipeline(pipeline_id)
-    ensure_index_template(template_name, pipeline_id, index_patterns)
+    ensure_index_template(template_name=template_name, pipeline_id=pipeline_id, index_patterns=index_patterns)

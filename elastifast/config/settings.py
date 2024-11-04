@@ -1,4 +1,5 @@
 from typing import Optional
+from urllib.parse import quote
 from typing_extensions import Self
 import yaml
 from pydantic import ValidationError, AnyUrl, field_validator, model_validator
@@ -52,15 +53,17 @@ class Settings(BaseSettings):
     elasticsearch_ssl_ca: Optional[str] = None
     elasticsearch_verify_certs: Optional[bool] = True
     celery_broker_url: AnyUrl
-    celery_result_backend: AnyUrl
+    #celery_result_backend: AnyUrl
     elasticapm_service_name: Optional[str] = "elastifast"
-    elasticapm_server_url: Optional[str] = None
+    elasticapm_server_url: Optional[AnyUrl] = None
+    elasticapm_es_url: AnyUrl
     elasticapm_secret_token: Optional[str] = None
+    elasticsearch_celery_username: Optional[str] = None
+    elasticsearch_celery_password: Optional[str] = None
     elasticapm_environment: Optional[str] = "production"
     atlassian_org_id: Optional[str] = None
     atlassian_secret_token: Optional[str] = None
-    celery_pipeline_id: Optional[str] = "logs-celery.results"
-    celery_index_template_name: Optional[str] = "logs-celery.results"
+    celery_index_name: Optional[str] = "logs-celery.results"
     celery_index_patterns: Optional[list] = ["logs-celery.results-*"]
 
     class Config:
@@ -83,6 +86,16 @@ class Settings(BaseSettings):
             )
         else:
             return None
+    
+    @property
+    def celery_result_backend(self) -> AnyUrl:
+        if self.elasticsearch_celery_username and self.elasticsearch_celery_password:
+            creds = f"{self.elasticsearch_celery_username}:{quote(self.elasticsearch_celery_password)}"
+        elif self.elasticsearch_username and self.elasticsearch_password:
+            creds = f"{self.elasticsearch_username}:{quote(self.elasticsearch_password)}"
+        else:
+            raise ValueError("Missing credentials for ElasticAPM server")
+        return f"elasticsearch+{self.elasticapm_es_url.scheme}://{creds}@{self.elasticapm_es_url.host}:{self.elasticapm_es_url.port}/{self.celery_index_name}"
 
     @property
     def elasticsearch_url(self) -> AnyUrl:
@@ -141,20 +154,20 @@ class Settings(BaseSettings):
             )
         return value
 
-    @field_validator("celery_result_backend")
-    def validate_celery_result_backend(cls, value):
-        if not value.scheme in [
-            "redis",
-            "amqp",
-            "amqps",
-            "sqs",
-            "elasticsearch",
-            "elasticsearch+https",
-        ]:
-            raise ValueError(
-                "Invalid Celery result backend. Must be one of: redis, amqp, amqps, sqs, elasticsearch."
-            )
-        return value
+    # @field_validator("celery_result_backend")
+    # def validate_celery_result_backend(cls, value):
+    #     if not value.scheme in [
+    #         "redis",
+    #         "amqp",
+    #         "amqps",
+    #         "sqs",
+    #         "elasticsearch",
+    #         "elasticsearch+https",
+    #     ]:
+    #         raise ValueError(
+    #             "Invalid Celery result backend. Must be one of: redis, amqp, amqps, sqs, elasticsearch."
+    #         )
+    #     return value
 
 
 # Load settings from YAML file or environment variables

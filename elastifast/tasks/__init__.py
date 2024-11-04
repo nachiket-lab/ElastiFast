@@ -10,11 +10,8 @@ import elasticapm
 from elastifast.app import settings, logger
 from elastifast.models.elasticsearch import ElasticsearchClient
 from elastifast.tasks.atlassian import get_atlassian_events
-from elastifast.tasks.setup_es import (
-    ensure_es_deps,
-    ensure_pipeline,
-    ensure_index_template,
-)
+from elastifast.tasks.setup_es import ensure_es_deps
+
 
 esclient = ElasticsearchClient()
 
@@ -40,8 +37,8 @@ celery_app = Celery(
 @celery_app.on_after_configure.connect
 def setup_tasks(sender, **kwargs):
     ensure_es_deps(
-        pipeline_id=settings.celery_pipeline_id,
-        template_name=settings.celery_index_template_name,
+        pipeline_id=settings.celery_index_name,
+        template_name=settings.celery_index_name,
         index_patterns=settings.celery_index_patterns,
     )
 
