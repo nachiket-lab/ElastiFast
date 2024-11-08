@@ -1,6 +1,6 @@
 from fastapi.responses import JSONResponse
 from celery.result import AsyncResult
-from elastifast.app import logger, settings
+from elastifast.config import logger, settings
 from elastifast.tasks import ingest_data_to_elasticsearch, ingest_data_from_atlassian
 from elastifast.tasks.monitor import get_celery_tasks
 from elastifast.models.elasticsearch import ElasticsearchClient

@@ -1,5 +1,5 @@
 from elasticsearch import Elasticsearch
-from elastifast.app import settings
+from elastifast.config import settings
 
 
 class ElasticsearchClient(object):

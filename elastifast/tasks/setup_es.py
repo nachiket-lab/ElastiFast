@@ -1,4 +1,4 @@
-from elastifast.app import logger
+from elastifast.config import logger
 from elasticsearch import NotFoundError
 from elastifast.models.elasticsearch import ElasticsearchClient
 

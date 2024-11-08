@@ -1,6 +1,6 @@
 import datetime
 import requests
-from elastifast.app import logger
+from elastifast.config import logger
 from elastifast.models.elasticsearch import ElasticsearchClient
 
 

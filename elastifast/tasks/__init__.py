@@ -7,7 +7,7 @@ from elasticapm.contrib.celery import (
     register_instrumentation,
 )
 import elasticapm
-from elastifast.app import settings, logger
+from elastifast.config import settings, logger
 from elastifast.models.elasticsearch import ElasticsearchClient
 from elastifast.tasks.atlassian import get_atlassian_events
 from elastifast.tasks.setup_es import ensure_es_deps

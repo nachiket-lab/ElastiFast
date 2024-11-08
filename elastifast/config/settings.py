@@ -30,12 +30,7 @@ def create_ecs_logger():
 
     return alogger
 
-
-logger = create_ecs_logger()
-
 # Define a base settings class with validationfrom pydantic import BaseSettings, AnyUrl
-
-
 class Settings(BaseSettings):
     # db_host: str
     # db_port: int
