@@ -4,11 +4,6 @@ from typing_extensions import Self
 import yaml
 from pydantic import ValidationError, AnyUrl, field_validator, model_validator
 from pydantic_settings import BaseSettings
-from fastapi import FastAPI
-from celery import Celery
-from elasticsearch import Elasticsearch
-from elasticapm.contrib.starlette import ElasticAPM, make_apm_client
-from starlette.applications import Starlette
 import logging
 import ecs_logging
 
@@ -65,22 +60,22 @@ class Settings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
 
-    @property
-    def apm_client(self):
-        if (
-            self.elasticapm_service_name
-            and self.elasticapm_server_url
-            and self.elasticapm_secret_token
-        ):
-            return make_apm_client(
-                {
-                    "SERVICE_NAME": self.elasticapm_service_name,
-                    "SERVER_URL": self.elasticapm_server_url,
-                    "SECRET_TOKEN": self.elasticapm_secret_token,
-                }
-            )
-        else:
-            return None
+    # @property
+    # def apm_client(self):
+    #     if (
+    #         self.elasticapm_service_name
+    #         and self.elasticapm_server_url
+    #         and self.elasticapm_secret_token
+    #     ):
+    #         return make_apm_client(
+    #             {
+    #                 "SERVICE_NAME": self.elasticapm_service_name,
+    #                 "SERVER_URL": self.elasticapm_server_url,
+    #                 "SECRET_TOKEN": self.elasticapm_secret_token,
+    #             }
+    #         )
+    #     else:
+    #         return None
     
     @property
     def celery_result_backend(self) -> AnyUrl:

@@ -2,6 +2,7 @@ from time import sleep
 import os, sys
 from celery import shared_task, current_task
 from celery import Celery
+from elasticapm.contrib.starlette import make_apm_client
 from elasticapm.contrib.celery import (
     register_exception_tracking,
     register_instrumentation,
@@ -17,8 +18,13 @@ esclient = ElasticsearchClient()
 
 # Register the Celery instrumentation
 if os.environ.get("CELERY_WORKER_RUNNING") is not None or "worker" in sys.argv:
-    register_instrumentation(settings.apm_client)
-    register_exception_tracking(settings.apm_client)
+    apm_client  = make_apm_client({
+            "SERVICE_NAME": settings.elasticapm_service_name,
+            "SERVER_URL": settings.elasticapm_server_url,
+            "SECRET_TOKEN": settings.elasticapm_secret_token
+        })
+    register_instrumentation(apm_client)
+    register_exception_tracking(apm_client)
     logger.info("ElasticAPM initialized in Celery worker")
 else:
     logger.info("ElasticAPM initialized in non-worker mode")

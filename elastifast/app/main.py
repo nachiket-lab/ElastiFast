@@ -1,10 +1,12 @@
 from fastapi.responses import JSONResponse
+from elasticapm.contrib.starlette import ElasticAPM, make_apm_client
 from celery.result import AsyncResult
 from elastifast.config import logger, settings
 from elastifast.tasks import ingest_data_to_elasticsearch, ingest_data_from_atlassian
 from elastifast.tasks.monitor import get_celery_tasks
 from elastifast.models.elasticsearch import ElasticsearchClient
 from typing import Dict, Any
+import sys
 from fastapi import Response, status, FastAPI, Query
 from elasticsearch.exceptions import (
     ConnectionError,
@@ -21,14 +23,15 @@ if (
     settings.elasticapm_service_name
     and settings.elasticapm_server_url
     and settings.elasticapm_secret_token
+    and "worker" not in sys.argv
 ):
     try:
-        # apm_client  = make_apm_client({
-        #     "SERVICE_NAME": settings.elasticapm_service_name,
-        #     "SERVER_URL": settings.elasticapm_server_url,
-        #     "SECRET_TOKEN": settings.elasticapm_secret_token
-        # })
-        app.add_middleware(ElasticAPM, client=settings.apm_client)
+        apm_client  = make_apm_client({
+            "SERVICE_NAME": settings.elasticapm_service_name,
+            "SERVER_URL": settings.elasticapm_server_url,
+            "SECRET_TOKEN": settings.elasticapm_secret_token
+        })
+        app.add_middleware(ElasticAPM, client=apm_client)
         logger.info("ElasticAPM initialized")
     except Exception as e:
         logger.error(f"Error initializing ElasticAPM: {e}")
