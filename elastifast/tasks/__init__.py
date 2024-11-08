@@ -14,7 +14,7 @@ from elastifast.tasks.atlassian import get_atlassian_events
 from elastifast.tasks.setup_es import ensure_es_deps
 
 
-esclient = ElasticsearchClient()
+esclient = ElasticsearchClient().client
 
 # Register the Celery instrumentation
 if os.environ.get("CELERY_WORKER_RUNNING") is not None or "worker" in sys.argv:
