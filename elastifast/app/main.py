@@ -1,3 +1,4 @@
+import time
 from fastapi.responses import JSONResponse
 from elasticapm.contrib.starlette import ElasticAPM, make_apm_client
 from celery.result import AsyncResult
@@ -110,6 +111,8 @@ async def tasks(response: Response) -> Dict[str, Any]:
 async def atlassian_data(
     response: Response,
     delta: int = Query(5, ge=0, le=360, description="Time delta in minutes (0 to 360)"),
+    dataset: str = "atlassian.admin",
+    namespace: str = "default",
 ) -> Dict[str, Any]:
     if (
         settings.atlassian_org_id is not None
@@ -117,7 +120,7 @@ async def atlassian_data(
     ):
         logger.debug("Atlassian credentials found")
         # Trigger the Celery task with the delta value
-        task = ingest_data_from_atlassian.delay(delta)
+        task = ingest_data_from_atlassian.delay(interval=delta, dataset=dataset, namespace=namespace)
 
         # Create an AsyncResult object to track the task
         task_result = AsyncResult(task.id)
