@@ -16,18 +16,11 @@ from elastifast.tasks.setup_es import ensure_es_deps
 
 esclient = ElasticsearchClient().client
 
-# Register the Celery instrumentation
-if os.environ.get("CELERY_WORKER_RUNNING") is not None or "worker" in sys.argv:
-    apm_client  = make_apm_client({
-            "SERVICE_NAME": settings.elasticapm_service_name,
-            "SERVER_URL": settings.elasticapm_server_url,
-            "SECRET_TOKEN": settings.elasticapm_secret_token
-        })
-    register_instrumentation(apm_client)
-    register_exception_tracking(apm_client)
-    logger.info("ElasticAPM initialized in Celery worker")
-else:
-    logger.info("ElasticAPM initialized in non-worker mode")
+client = settings.apm_client
+# if any("worker" in s for s in sys.argv):
+#     client = settings.apm_client
+# else:
+#     pass
 
 # register_instrumentation(settings.apm_client)
 # register_exception_tracking(settings.apm_client)
@@ -67,7 +60,7 @@ def common_output(res):
 def ingest_data_to_elasticsearch(data: dict):
     # Use the db and es clients to ingest the data into Elasticsearch
     sleep(1)
-    logger.info({"data": data, "esclient": esclient.info()})
+    # logger.info({"data": data, "esclient": esclient.info()})
     return {"data": data}
 
 

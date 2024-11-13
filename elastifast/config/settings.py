@@ -1,11 +1,14 @@
+from re import I
 from typing import Optional
 from urllib.parse import quote
+from venv import logger
 from typing_extensions import Self
 import yaml
 from pydantic import ValidationError, AnyUrl, field_validator, model_validator
 from pydantic_settings import BaseSettings
 import logging
 import ecs_logging
+from elasticapm.contrib.starlette import ElasticAPM, make_apm_client
 
 
 def create_ecs_logger():
@@ -53,29 +56,40 @@ class Settings(BaseSettings):
     elasticapm_environment: Optional[str] = "production"
     atlassian_org_id: Optional[str] = None
     atlassian_secret_token: Optional[str] = None
-    celery_index_name: Optional[str] = "logs-celery.results"
+    celery_index_name: Optional[str] = "logs-celery.results-default"
     celery_index_patterns: Optional[list] = ["logs-celery.results-*"]
 
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
 
-    # @property
-    # def apm_client(self):
-    #     if (
-    #         self.elasticapm_service_name
-    #         and self.elasticapm_server_url
-    #         and self.elasticapm_secret_token
-    #     ):
-    #         return make_apm_client(
-    #             {
-    #                 "SERVICE_NAME": self.elasticapm_service_name,
-    #                 "SERVER_URL": self.elasticapm_server_url,
-    #                 "SECRET_TOKEN": self.elasticapm_secret_token,
-    #             }
-    #         )
-    #     else:
-    #         return None
+    @property
+    def apm_client(self):
+        if (
+            self.elasticapm_service_name
+            and self.elasticapm_server_url
+            and self.elasticapm_secret_token
+        ):
+            client = make_apm_client(
+                {
+                    "SERVICE_NAME": self.elasticapm_service_name,
+                    "SERVER_URL": self.elasticapm_server_url,
+                    "SECRET_TOKEN": self.elasticapm_secret_token,
+                }
+            )
+            try:
+                import celery
+                from elasticapm.contrib.celery import (
+                    register_exception_tracking,
+                    register_instrumentation,
+                )
+                register_instrumentation(client)
+                register_exception_tracking(client)
+                return client
+            except ImportError:
+                logger.debug("Celery not found. Skipping Celery instrumentation")  
+        else:
+            return None
     
     @property
     def celery_result_backend(self) -> AnyUrl:
