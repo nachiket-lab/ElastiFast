@@ -16,14 +16,11 @@ from elastifast.tasks.setup_es import ensure_es_deps
 
 esclient = ElasticsearchClient().client
 
-client = settings.apm_client
-# if any("worker" in s for s in sys.argv):
-#     client = settings.apm_client
-# else:
-#     pass
-
-# register_instrumentation(settings.apm_client)
-# register_exception_tracking(settings.apm_client)
+#client = settings.apm_client
+if any("worker" in s for s in sys.argv):
+    client = settings.apm_client
+else:
+    pass
 
 # Create a Celery app
 celery_app = Celery(
@@ -60,8 +57,8 @@ def common_output(res):
 def ingest_data_to_elasticsearch(data: dict):
     # Use the db and es clients to ingest the data into Elasticsearch
     sleep(1)
-    # logger.info({"data": data, "esclient": esclient.info()})
-    return {"data": data}
+    logger.info({"data": data})
+    return common_output({"data": data})
 
 
 @shared_task
