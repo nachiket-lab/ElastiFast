@@ -55,7 +55,7 @@ def ingest_data_to_elasticsearch(self, data: dict, dataset: str, namespace: str)
     index_name = f"logs-{dataset}-{namespace}"
     try:
         res = index_data(esclient=esclient, data=data, index_name=index_name)
-        return common_output({"message": str(res)})
+        return common_output(res)
     except (ConnectionError, TimeoutError, ConnectionTimeout, TransportError) as e:
         logger.info(f"Error of type {type(e)} occured. Retrying task, attempt number: {self.request.retries}/{self.max_retries}")
         raise
@@ -73,5 +73,5 @@ def ingest_data_from_atlassian(interval: int, dataset: str, namespace: str):
         res = {"data": data, "message": f"Data ingested from Atlassian {len(data)} events"}
     except Exception as e:
         logger.error(f"Error of type {type(e)} occured while polling data from atlassian: {e}. Exiting now.")
-    ingest_data_to_elasticsearch.delay(res)
+    ingest_data_to_elasticsearch.delay(data=res["data"], dataset=dataset, namespace=namespace)
     return common_output(res)
