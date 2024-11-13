@@ -1,5 +1,7 @@
-from elasticsearch.helpers import bulk, BulkIndexError
+from elasticsearch.helpers import BulkIndexError, bulk
+
 from elastifast.config import logger
+
 
 def index_data(esclient, data: list, index_name: str):
     for item in data:
@@ -13,9 +15,4 @@ def index_data(esclient, data: list, index_name: str):
     except Exception as e:
         logger.error(f"Error of type {type(e)} occured while ingesting data: {e}.")
         raise
-    return {
-        "ingested_events": {
-            "success": res[0],
-            "failure": res[1]
-        }
-    }
+    return {"ingested_events": {"success": res[0], "failure": res[1]}}

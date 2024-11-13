@@ -1,5 +1,6 @@
-from elastifast.config import logger
 from elasticsearch import NotFoundError
+
+from elastifast.config import logger
 from elastifast.models.elasticsearch import ElasticsearchClient
 
 es = ElasticsearchClient().client
@@ -88,7 +89,7 @@ def ensure_pipeline(pipeline_id):
         es.ingest.get_pipeline(id=pipeline_id)
     except NotFoundError as e:
         logger.info(f"Pipeline with {pipeline_id} not found. Creating new pipeline.")
-        try: 
+        try:
             es.ingest.put_pipeline(id=pipeline_id, body=ingest_pipeline)
         except Exception as e:
             logger.error(f"Error creating pipeline: {e}")
@@ -117,6 +118,11 @@ def ensure_index_template(template_name, pipeline_id, index_patterns):
     except Exception as e:
         print(f"Error checking/creating index template: {e}")
 
+
 def ensure_es_deps(template_name, pipeline_id, index_patterns):
     ensure_pipeline(pipeline_id)
-    ensure_index_template(template_name=template_name, pipeline_id=pipeline_id, index_patterns=index_patterns)
+    ensure_index_template(
+        template_name=template_name,
+        pipeline_id=pipeline_id,
+        index_patterns=index_patterns,
+    )
