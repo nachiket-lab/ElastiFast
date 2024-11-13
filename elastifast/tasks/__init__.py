@@ -69,4 +69,5 @@ def ingest_data_from_atlassian(interval):
         org_id=settings.atlassian_org_id,
     )
     res = {"data": data, "message": f"Data ingested from Atlassian {len(data)} events"}
+    ingest_data_to_elasticsearch.delay(res)
     return common_output(res)
