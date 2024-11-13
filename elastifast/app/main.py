@@ -1,10 +1,31 @@
 from fastapi.responses import JSONResponse
-from elastifast import logger, app
-from tasks import ingest_data_to_elasticsearch
+from elasticapm.contrib.starlette import ElasticAPM, make_apm_client
+from celery.result import AsyncResult
+from elastifast.config import logger, settings
+from elastifast.tasks import ingest_data_to_elasticsearch, ingest_data_from_atlassian
+from elastifast.tasks.monitor import get_celery_tasks
 from elastifast.models.elasticsearch import ElasticsearchClient
 from typing import Dict, Any
-from fastapi import Response, status
-from elasticsearch.exceptions import ConnectionError, NotFoundError, RequestError, TransportError
+import sys
+from fastapi import Response, status, FastAPI, Query
+from elasticsearch.exceptions import (
+    ConnectionError,
+    NotFoundError,
+    RequestError,
+    TransportError,
+)
+from elasticapm.contrib.starlette import ElasticAPM
+
+
+app = FastAPI()
+
+try:
+    app.add_middleware(ElasticAPM, client=settings.apm_client)
+    logger.info("ElasticAPM initialized")
+except Exception as e:
+    logger.error(f"Error initializing ElasticAPM: {e}")
+    raise
+
 
 # Define a FastAPI endpoint to trigger the Celery task
 @app.post("/ingest_data")
@@ -49,9 +70,9 @@ async def healthcheck(response: Response) -> Dict[str, Any]:
             logger.error("Elasticsearch client is null")
             response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
             return {"error": "Elasticsearch client is null"}
-        
+
         res = es.client.cluster.health()
-        return (dict(res))
+        return dict(res)
     except ConnectionError as e:
         logger.error(f"Connection error: {e}")
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -72,3 +93,43 @@ async def healthcheck(response: Response) -> Dict[str, Any]:
         logger.error(f"Unexpected error: {e}, Response Object: {str(res)}")
         response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
         return {"error": "An unexpected error occurred."}
+
+
+@app.get("/tasks")
+async def tasks(response: Response) -> Dict[str, Any]:
+    """
+    Endpoint to return the list of running tasks.
+
+    Returns:
+        A dictionary containing the list of running tasks.
+    """
+    return get_celery_tasks()
+
+
+@app.get("/atlassian")
+async def atlassian_data(
+    response: Response,
+    delta: int = Query(5, ge=0, le=360, description="Time delta in minutes (0 to 360)"),
+) -> Dict[str, Any]:
+    if (
+        settings.atlassian_org_id is not None
+        and settings.atlassian_secret_token is not None
+    ):
+        logger.debug("Atlassian credentials found")
+        # Trigger the Celery task with the delta value
+        task = ingest_data_from_atlassian.delay(delta)
+
+        # Create an AsyncResult object to track the task
+        task_result = AsyncResult(task.id)
+
+        # Return the task details
+        return {
+            "task_id": task.id,
+            "task_name": ingest_data_from_atlassian.name,  # Get the task name from the task itself
+            "task_status": task_result.status,
+            "task_result": task_result.result,  # This will be None if the task hasn't finished yet
+        }
+    else:
+        logger.error("Atlassian credentials not found")
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"error": "Missing Atlassian credentials in settings.yaml"}

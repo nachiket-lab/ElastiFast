@@ -1,20 +1,14 @@
-import os
+from re import I
 from typing import Optional
+from urllib.parse import quote
+from venv import logger
 from typing_extensions import Self
 import yaml
 from pydantic import ValidationError, AnyUrl, field_validator, model_validator
 from pydantic_settings import BaseSettings
-from fastapi import FastAPI
-from celery import Celery
-from elasticsearch import Elasticsearch
-from elasticapm.contrib.starlette import make_apm_client, ElasticAPM
-from starlette.applications import Starlette
 import logging
 import ecs_logging
-
-import elastifast
-# from elasticapm import Client
-
+from elasticapm.contrib.starlette import ElasticAPM, make_apm_client
 
 
 def create_ecs_logger():
@@ -34,12 +28,7 @@ def create_ecs_logger():
 
     return alogger
 
-
-logger = create_ecs_logger()
-
 # Define a base settings class with validationfrom pydantic import BaseSettings, AnyUrl
-
-
 class Settings(BaseSettings):
     # db_host: str
     # db_port: int
@@ -57,11 +46,18 @@ class Settings(BaseSettings):
     elasticsearch_ssl_ca: Optional[str] = None
     elasticsearch_verify_certs: Optional[bool] = True
     celery_broker_url: AnyUrl
-    celery_result_backend: AnyUrl
+    #celery_result_backend: AnyUrl
     elasticapm_service_name: Optional[str] = "elastifast"
-    elasticapm_server_url: Optional[str] = None
+    elasticapm_server_url: Optional[AnyUrl] = None
+    elasticapm_es_url: AnyUrl
     elasticapm_secret_token: Optional[str] = None
+    elasticsearch_celery_username: Optional[str] = None
+    elasticsearch_celery_password: Optional[str] = None
     elasticapm_environment: Optional[str] = "production"
+    atlassian_org_id: Optional[str] = None
+    atlassian_secret_token: Optional[str] = None
+    celery_index_name: Optional[str] = "logs-celery.results-default"
+    celery_index_patterns: Optional[list] = ["logs-celery.results-*"]
 
     class Config:
         env_file = ".env"
@@ -74,12 +70,36 @@ class Settings(BaseSettings):
             and self.elasticapm_server_url
             and self.elasticapm_secret_token
         ):
-            return make_apm_client({
-                "SERVICE_NAME": self.elasticapm_service_name,
-                "SERVER_URL": self.elasticapm_server_url,
-                "SECRET_TOKEN": self.elasticapm_secret_token})
+            client = make_apm_client(
+                {
+                    "SERVICE_NAME": self.elasticapm_service_name,
+                    "SERVER_URL": self.elasticapm_server_url,
+                    "SECRET_TOKEN": self.elasticapm_secret_token,
+                }
+            )
+            try:
+                import celery
+                from elasticapm.contrib.celery import (
+                    register_exception_tracking,
+                    register_instrumentation,
+                )
+                register_instrumentation(client)
+                register_exception_tracking(client)
+                return client
+            except ImportError:
+                logger.debug("Celery not found. Skipping Celery instrumentation")  
         else:
             return None
+    
+    @property
+    def celery_result_backend(self) -> AnyUrl:
+        if self.elasticsearch_celery_username and self.elasticsearch_celery_password:
+            creds = f"{self.elasticsearch_celery_username}:{quote(self.elasticsearch_celery_password)}"
+        elif self.elasticsearch_username and self.elasticsearch_password:
+            creds = f"{self.elasticsearch_username}:{quote(self.elasticsearch_password)}"
+        else:
+            raise ValueError("Missing credentials for ElasticAPM server")
+        return f"elasticsearch+{self.elasticapm_es_url.scheme}://{creds}@{self.elasticapm_es_url.host}:{self.elasticapm_es_url.port}/{self.celery_index_name}"
 
     @property
     def elasticsearch_url(self) -> AnyUrl:
@@ -138,13 +158,20 @@ class Settings(BaseSettings):
             )
         return value
 
-    @field_validator("celery_result_backend")
-    def validate_celery_result_backend(cls, value):
-        if not value.scheme in ["redis", "amqp", "amqps", "sqs"]:
-            raise ValueError(
-                "Invalid Celery result backend. Must be one of: redis, amqp, amqps, sqs."
-            )
-        return value
+    # @field_validator("celery_result_backend")
+    # def validate_celery_result_backend(cls, value):
+    #     if not value.scheme in [
+    #         "redis",
+    #         "amqp",
+    #         "amqps",
+    #         "sqs",
+    #         "elasticsearch",
+    #         "elasticsearch+https",
+    #     ]:
+    #         raise ValueError(
+    #             "Invalid Celery result backend. Must be one of: redis, amqp, amqps, sqs, elasticsearch."
+    #         )
+    #     return value
 
 
 # Load settings from YAML file or environment variables

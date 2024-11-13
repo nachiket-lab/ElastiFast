@@ -1,5 +1,6 @@
 from elasticsearch import Elasticsearch
-from elastifast import settings
+from elastifast.config import settings
+
 
 class ElasticsearchClient(object):
     """
@@ -25,11 +26,17 @@ class ElasticsearchClient(object):
         auth_kwargs = {}
         if settings.elasticsearch_auth_method == "basic":
             auth_kwargs = {
-                "http_auth": (settings.elasticsearch_username, settings.elasticsearch_password)
+                "http_auth": (
+                    settings.elasticsearch_username,
+                    settings.elasticsearch_password,
+                )
             }
         elif settings.elasticsearch_auth_method == "api_key":
             auth_kwargs = {
-                "api_key": (settings.elasticsearch_api_key_id, settings.elasticsearch_api_key)
+                "api_key": (
+                    settings.elasticsearch_api_key_id,
+                    settings.elasticsearch_api_key,
+                )
             }
 
         return Elasticsearch(
