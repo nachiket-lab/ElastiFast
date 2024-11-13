@@ -85,10 +85,12 @@ class Settings(BaseSettings):
                 )
                 register_instrumentation(client)
                 register_exception_tracking(client)
+                logger.info("ElasticAPM initialized with Celery")
                 return client
             except ImportError:
-                logger.debug("Celery not found. Skipping Celery instrumentation")  
+                logger.info("Celery not found. Skipping Celery instrumentation")  
         else:
+            logger.error("APM client not initialized")
             return None
     
     @property
