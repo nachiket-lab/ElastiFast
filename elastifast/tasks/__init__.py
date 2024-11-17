@@ -1,3 +1,4 @@
+from pydoc import cli
 import sys
 
 import ecs_logging
@@ -8,7 +9,7 @@ from elasticsearch.exceptions import ConnectionError, ConnectionTimeout, Transpo
 
 from elastifast.config import logger, settings
 from elastifast.models.elasticsearch import ElasticsearchClient
-from elastifast.tasks.atlassian import get_atlassian_events
+from elastifast.tasks.atlassian import AtlassianAPIClient
 from elastifast.tasks.ingest_es import index_data
 from elastifast.tasks.setup_es import ensure_es_deps
 
@@ -81,12 +82,9 @@ def ingest_data_to_elasticsearch(self, data: dict, dataset: str, namespace: str)
 
 @shared_task(retry_backoff=True, max_retries=5)
 def ingest_data_from_atlassian(interval: int, dataset: str, namespace: str):
+    client = AtlassianAPIClient(secret_token=settings.atlassian_secret_token)
     try:
-        data = get_atlassian_events(
-            time_delta=interval,
-            secret_token=settings.atlassian_secret_token,
-            org_id=settings.atlassian_org_id,
-        )
+        data = client.get_events(org_id=settings.atlassian_org_id, time_delta=interval)
         res = {
             "data": data,
             "message": f"Data ingested from Atlassian {len(data)} events",
