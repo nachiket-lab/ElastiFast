@@ -1,4 +1,5 @@
 from elasticsearch import Elasticsearch
+
 from elastifast.config import settings
 
 

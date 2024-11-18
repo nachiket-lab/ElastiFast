@@ -1,21 +1,22 @@
-from fastapi.responses import JSONResponse
-from elasticapm.contrib.starlette import ElasticAPM, make_apm_client
-from celery.result import AsyncResult
-from elastifast.config import logger, settings
-from elastifast.tasks import ingest_data_to_elasticsearch, ingest_data_from_atlassian
-from elastifast.tasks.monitor import get_celery_tasks
-from elastifast.models.elasticsearch import ElasticsearchClient
-from typing import Dict, Any
 import sys
-from fastapi import Response, status, FastAPI, Query
+import time
+from typing import Any, Dict
+
+from celery.result import AsyncResult
+from elasticapm.contrib.starlette import ElasticAPM, make_apm_client
 from elasticsearch.exceptions import (
     ConnectionError,
     NotFoundError,
     RequestError,
     TransportError,
 )
-from elasticapm.contrib.starlette import ElasticAPM
+from fastapi import FastAPI, Query, Response, status
+from fastapi.responses import JSONResponse
 
+from elastifast.config import logger, settings
+from elastifast.models.elasticsearch import ElasticsearchClient
+from elastifast.tasks import ingest_data_from_atlassian, ingest_data_to_elasticsearch
+from elastifast.tasks.monitor import get_celery_tasks
 
 app = FastAPI()
 
@@ -110,6 +111,8 @@ async def tasks(response: Response) -> Dict[str, Any]:
 async def atlassian_data(
     response: Response,
     delta: int = Query(5, ge=0, le=360, description="Time delta in minutes (0 to 360)"),
+    dataset: str = "atlassian.admin",
+    namespace: str = "default",
 ) -> Dict[str, Any]:
     if (
         settings.atlassian_org_id is not None
@@ -117,7 +120,9 @@ async def atlassian_data(
     ):
         logger.debug("Atlassian credentials found")
         # Trigger the Celery task with the delta value
-        task = ingest_data_from_atlassian.delay(delta)
+        task = ingest_data_from_atlassian.delay(
+            interval=delta, dataset=dataset, namespace=namespace
+        )
 
         # Create an AsyncResult object to track the task
         task_result = AsyncResult(task.id)

@@ -1,14 +1,15 @@
+import logging
 from re import I
 from typing import Optional
 from urllib.parse import quote
 from venv import logger
-from typing_extensions import Self
-import yaml
-from pydantic import ValidationError, AnyUrl, field_validator, model_validator
-from pydantic_settings import BaseSettings
-import logging
+
 import ecs_logging
+import yaml
 from elasticapm.contrib.starlette import ElasticAPM, make_apm_client
+from pydantic import AnyUrl, ValidationError, field_validator, model_validator
+from pydantic_settings import BaseSettings
+from typing_extensions import Self
 
 
 def create_ecs_logger():
@@ -28,6 +29,7 @@ def create_ecs_logger():
 
     return alogger
 
+
 # Define a base settings class with validationfrom pydantic import BaseSettings, AnyUrl
 class Settings(BaseSettings):
     # db_host: str
@@ -46,7 +48,7 @@ class Settings(BaseSettings):
     elasticsearch_ssl_ca: Optional[str] = None
     elasticsearch_verify_certs: Optional[bool] = True
     celery_broker_url: AnyUrl
-    #celery_result_backend: AnyUrl
+    # celery_result_backend: AnyUrl
     elasticapm_service_name: Optional[str] = "elastifast"
     elasticapm_server_url: Optional[AnyUrl] = None
     elasticapm_es_url: AnyUrl
@@ -75,6 +77,7 @@ class Settings(BaseSettings):
                     "SERVICE_NAME": self.elasticapm_service_name,
                     "SERVER_URL": self.elasticapm_server_url,
                     "SECRET_TOKEN": self.elasticapm_secret_token,
+                    "ENVIRONMENT": self.elasticapm_environment,
                 }
             )
             try:
@@ -83,22 +86,25 @@ class Settings(BaseSettings):
                     register_exception_tracking,
                     register_instrumentation,
                 )
+
                 register_instrumentation(client)
                 register_exception_tracking(client)
                 logger.info("ElasticAPM initialized with Celery")
                 return client
             except ImportError:
-                logger.info("Celery not found. Skipping Celery instrumentation")  
+                logger.info("Celery not found. Skipping Celery instrumentation")
         else:
             logger.error("APM client not initialized")
             return None
-    
+
     @property
     def celery_result_backend(self) -> AnyUrl:
         if self.elasticsearch_celery_username and self.elasticsearch_celery_password:
             creds = f"{self.elasticsearch_celery_username}:{quote(self.elasticsearch_celery_password)}"
         elif self.elasticsearch_username and self.elasticsearch_password:
-            creds = f"{self.elasticsearch_username}:{quote(self.elasticsearch_password)}"
+            creds = (
+                f"{self.elasticsearch_username}:{quote(self.elasticsearch_password)}"
+            )
         else:
             raise ValueError("Missing credentials for ElasticAPM server")
         return f"elasticsearch+{self.elasticapm_es_url.scheme}://{creds}@{self.elasticapm_es_url.host}:{self.elasticapm_es_url.port}/{self.celery_index_name}"

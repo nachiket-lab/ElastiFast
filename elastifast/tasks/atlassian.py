@@ -1,65 +1,109 @@
 import datetime
 import requests
+from typing import List, Optional, Tuple, Dict
 from elastifast.config import logger
 from elastifast.models.elasticsearch import ElasticsearchClient
 
-
-def get_atlassian_url(org_id: str, time_delta: int, limit: int = 500):
-    start_time_in_milliseconds, end_time_in_milliseconds = calculate_time_window(
-        time_delta
-    )
-    url = f"https://api.atlassian.com/admin/v1/orgs/{org_id}/events?from={str(start_time_in_milliseconds)}&to={str(end_time_in_milliseconds)}&limit={str(limit)}"
-    return url
+# Constants
+DEFAULT_LIMIT = 500
 
 
-def calculate_time_window(
-    delta: int, time: datetime = datetime.datetime.now(datetime.timezone.utc)
-):
-    time = time.replace(second=0, microsecond=0)
-    start_time = time - datetime.timedelta(minutes=delta * 2)
-    end_time = time - datetime.timedelta(minutes=delta)
-    start_time_in_milliseconds = round(start_time.timestamp() * 1000)
-    end_time_in_milliseconds = round(end_time.timestamp() * 1000)
-    return (start_time_in_milliseconds, end_time_in_milliseconds)
+class AtlassianAPIClient:
+    def __init__(self, secret_token: str):
+        """
+        Initialize the Atlassian API client.
 
+        Args:
+            secret_token (str): The API token for authorization.
+        """
+        self.secret_token = secret_token
+        self.headers = {
+            "Accept": "application/json",
+            "Authorization": f"Bearer {self.secret_token}",
+        }
 
-def query_data_from_atlassian(url: str, secret_token: str):
-    """query_data_from_atlassian _summary_
+    @staticmethod
+    def calculate_time_window(delta: int, 
+                              current_time: Optional[datetime.datetime] = None
+                              ) -> Tuple[int, int]:
+        """
+        Calculate the time window for querying.
 
-    Args:
-        query (str): _description_
-        start_time_in_milliseconds (int): _description_
-        end_time_in_milliseconds (int): _description_
-        limit (int, optional): _description_. Defaults to 10000.
-    """
-    headers = {"Accept": "application/json", "Authorization": f"Bearer {secret_token}"}
+        Args:
+            delta (int): The time delta in minutes.
+            current_time (datetime, optional): The reference time. Defaults to UTC now.
 
-    response = requests.get(url, headers=headers)
+        Returns:
+            Tuple[int, int]: Start and end times in milliseconds.
+        """
+        if current_time is None:
+            current_time = datetime.datetime.now(datetime.timezone.utc)
+        current_time = current_time.replace(second=0, microsecond=0)
+        start_time = current_time - datetime.timedelta(minutes=delta * 2)
+        end_time = current_time - datetime.timedelta(minutes=delta)
+        return (
+            round(start_time.timestamp() * 1000),
+            round(end_time.timestamp() * 1000),
+        )
 
-    if response.status_code == 200:
-        return response.json()
-    else:
-        logger.error(f"Error querying data from Atlassian: {response.text}")
-        return None
+    def build_url(self, org_id: str, time_delta: int, limit: int = DEFAULT_LIMIT) -> str:
+        """
+        Build the Atlassian API URL for fetching events.
 
+        Args:
+            org_id (str): Organization ID.
+            time_delta (int): Time delta in minutes.
+            limit (int): Maximum number of records to fetch per request.
 
-def get_atlassian_events(secret_token: str, org_id: str, time_delta: int = 5):
-    """get_atlassian_events _summary_
+        Returns:
+            str: The constructed API URL.
+        """
+        start_time, end_time = self.calculate_time_window(time_delta)
+        return (
+            f"https://api.atlassian.com/admin/v1/orgs/{org_id}/events?from={start_time}&to={end_time}&limit={limit}"
+        )
 
-    Args:
-        time_delta (int, optional): _description_. Defaults to 5.
-    """
-    url = get_atlassian_url(org_id, time_delta)
-    data = []
-    while True:
-        result = query_data_from_atlassian(url=url, secret_token=secret_token)
-        if result is not None and "data" in result.keys():
-            data += result["data"]
-        else:
-            logger.error("Data is empty or not found")
-            raise ValueError("Data is empty or not found")
-        if "next" in result["links"]:
-            url = result["links"]["next"]
-        else:
-            break
-    return data
+    def fetch_data(self, url: str) -> Optional[Dict]:
+        """
+        Fetch data from the Atlassian API.
+
+        Args:
+            url (str): The API endpoint URL.
+
+        Returns:
+            Optional[Dict]: The JSON response data or None if the request fails.
+        """
+        try:
+            response = requests.get(url, headers=self.headers, timeout=10)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error querying data from Atlassian: {e}")
+            return None
+
+    def get_events(self, org_id: str, time_delta: int = 5) -> List[Dict]:
+        """
+        Retrieve all events from the Atlassian API for the given time window.
+
+        Args:
+            org_id (str): Organization ID.
+            time_delta (int): Time delta in minutes.
+
+        Returns:
+            List[Dict]: List of event records.
+        """
+        url = self.build_url(org_id, time_delta)
+        self.data = []
+
+        while url:
+            logger.info(f"Fetching data from URL: {url}")
+            result = self.fetch_data(url)
+            if result and "data" in result:
+                self.data.extend(result["data"])
+                url = result.get("links", {}).get("next")
+            else:
+                logger.error("No data found or an error occurred.")
+                raise ValueError("Data is empty or not found")
+
+        logger.info(f"Fetched {len(self.data)} events from Atlassian.")
+        return self.data
