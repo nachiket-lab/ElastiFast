@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapi
+  namespace: elastifast
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: fastapi
+  template:
+    metadata:
+      labels:
+        app: fastapi
+    spec:
+      containers:
+        - name: fastapi
+          image: ghcr.io/nachiket-lab/elastifast:alpine-3.11
+          command: ["uvicorn"] # Custom command (replaces entrypoint)
+          args:
+            ["elastifast.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+          # env:
+          #   - name: REDIS_HOST
+          #     value: redis
+          #   - name: CELERY_BROKER_URL
+          #     value: redis://redis:6379/0
+          #   - name: CELERY_BACKEND_URL
+          #     value: redis://redis:6379/1
+          ports:
+            - containerPort: 8000
+          volumeMounts:
+            - name: settings-volume
+              mountPath: /app/settings.yaml
+              subPath: settings.yaml # Mount only the settings.yaml file
+      volumes:
+        - name: settings-volume
+          secret:
+            secretName: elastifast-settings
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastapi
+  namespace: elastifast
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8000
+  selector:
+    app: fastapi

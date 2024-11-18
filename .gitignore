@@ -24,3 +24,5 @@ config/*.ini
 # Ignore other files and directories
 __pycache__
 config.ini
+
+deploy/*secret*.yaml
