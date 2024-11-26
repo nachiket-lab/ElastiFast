@@ -12,7 +12,7 @@ from elasticsearch.exceptions import (ConnectionError, ConnectionTimeout,
 from elastifast.config import logger, settings
 from elastifast.models.elasticsearch import ElasticsearchClient
 from elastifast.tasks.atlassian import AtlassianAPIClient
-from elastifast.tasks.ingest_es import index_data
+from elastifast.tasks.ingest_es import ElasticsearchIngestData
 from elastifast.tasks.jira import JiraAuditLogIngestor
 from elastifast.tasks.setup_es import ensure_es_deps
 
@@ -82,8 +82,8 @@ def common_output(data, object=False):
 def ingest_data_to_elasticsearch(self, data: dict, dataset: str, namespace: str):
     index_name = f"logs-{dataset}-{namespace}"
     try:
-        res = index_data(esclient=esclient, data=data, index_name=index_name)
-        return common_output(res)
+        client = ElasticsearchIngestData(esclient=esclient, data=data, index_name=index_name)
+        return common_output(client, object=True)
     except (ConnectionError, TimeoutError, ConnectionTimeout, TransportError) as e:
         logger.info(
             f"Error of type {type(e)} occured. Retrying task, attempt number: {self.request.retries}/{self.max_retries}"
