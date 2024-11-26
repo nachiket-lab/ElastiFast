@@ -10,6 +10,7 @@ def index_data(esclient, data: list, index_name: str):
         item["_op_type"] = "create"
     try:
         res = bulk(esclient, data)
+        message = f"Data ingested from {esclient.__class__.__name__} {len(res[0])} events"
     except BulkIndexError as e:
         message = f"Indexing error while ingesting data: {e.errors}."
         logger.error(message)
@@ -18,4 +19,4 @@ def index_data(esclient, data: list, index_name: str):
         message = f"Error of type {type(e)} occured while ingesting data: {e}."
         logger.error(message)
         raise
-    return {"ingested_events": {"success": res[0], "failure": res[1]}, "message": message}
+    return {"ingested_events": {"success": res[0], "failure": res[1]}, "message": message, "class": esclient.__class__.__name__}

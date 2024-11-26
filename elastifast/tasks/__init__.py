@@ -60,7 +60,7 @@ def common_output(data, object=False):
         }
     else: 
         _d = {}
-    return {
+    d= {
         "transaction": {
             "id": elasticapm.get_transaction_id(),
         },
@@ -70,6 +70,7 @@ def common_output(data, object=False):
         },
         **_d
     }
+    return d
 
 
 @shared_task(
