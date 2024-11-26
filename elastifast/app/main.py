@@ -105,13 +105,26 @@ async def tasks(response: Response) -> Dict[str, Any]:
     return get_celery_tasks()
 
 
+def response_object(task):
+    # Create an AsyncResult object to track the task
+    task_result = AsyncResult(task.id)
+
+    # Return the task details
+    return {
+        "task_id": task.id,
+        "task_name": task.name,  # Get the task name from the task itself
+        "task_status": task_result.status,
+        "task_result": task_result.result,  # This will be None if the task hasn't finished yet
+    }
+
+
 @app.get("/atlassian")
 async def atlassian_data(
     response: Response,
     delta: int = Query(5, ge=0, le=360, description="Time delta in minutes (0 to 360)"),
     dataset: str = "atlassian.admin",
     namespace: str = "default",
-) -> Dict[str, Any]:
+):
     if (
         settings.atlassian_org_id is not None
         or settings.atlassian_secret_token is not None
@@ -121,22 +134,34 @@ async def atlassian_data(
         task = ingest_data_from_atlassian.delay(
             interval=delta, dataset=dataset, namespace=namespace
         )
-
-        # Create an AsyncResult object to track the task
-        task_result = AsyncResult(task.id)
-
-        # Return the task details
-        return {
-            "task_id": task.id,
-            "task_name": ingest_data_from_atlassian.name,  # Get the task name from the task itself
-            "task_status": task_result.status,
-            "task_result": task_result.result,  # This will be None if the task hasn't finished yet
-        }
+        return response_object(task)
     else:
         logger.error("Atlassian credentials not found")
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"error": "Missing Atlassian credentials in settings.yaml"}
 
+@app.get("/atlassian/retry")
+async def atlassian_data_retry(
+    response: Response,
+    start_time: str,
+    end_time: str,
+    dataset: str = "atlassian.admin",
+    namespace: str = "default",
+):
+    if (
+        settings.atlassian_org_id is not None
+        or settings.atlassian_secret_token is not None
+    ):
+        logger.debug("Atlassian credentials found")
+        # Trigger the Celery task with the delta value
+        task = ingest_data_from_atlassian.delay(
+            start_time=start_time, end_time=end_time, dataset=dataset, namespace=namespace
+        )
+        return response_object(task)
+    else:
+        logger.error("Atlassian credentials not found")
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"error": "Missing Atlassian credentials in settings.yaml"}
 
 @app.get("/jira")
 async def jira_data(

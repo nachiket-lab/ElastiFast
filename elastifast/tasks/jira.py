@@ -7,7 +7,7 @@ import requests
 from elastifast.config import logger
 from elastifast.models.apiclient import AbstractAPIClient
 
-DEFAULT_LIMIT = 1000
+DEFAULT_LIMIT = 10000
 
 
 class JiraAuditLogIngestor(AbstractAPIClient):
@@ -31,7 +31,7 @@ class JiraAuditLogIngestor(AbstractAPIClient):
             username (str): Username for Jira API authentication.
             api_key (str): API key for Jira API authentication.
         """
-        super().__init__(interval=5, base_url=url, username=username, password=password)
+        super().__init__(interval=interval, base_url=url, username=username, password=password)
         self.build_api_request()
         self._data = []
 
@@ -48,14 +48,17 @@ class JiraAuditLogIngestor(AbstractAPIClient):
         start_at = 0
 
         while True:
+            print("Entering loop for get events")
             self.params = {
                 "offset": start_at,
                 "limit": DEFAULT_LIMIT,
                 "from": self._from_time,
                 "to": self._to_time,
             }
+            data = self.fetch_data()
             try:
                 data = self.fetch_data()
+                print(f"loop for get events {data.get('total', 0)} exist. Records: {len(data.get("records", 0))}")
             except requests.exceptions.RequestException as e:
                 logger.error(f"Error fetching records: {e}")
                 raise
@@ -66,8 +69,7 @@ class JiraAuditLogIngestor(AbstractAPIClient):
                 logger.info(f"Fetched {len(self._data)} records from Jira")
                 break
 
-            start_at += DEFAULT_LIMIT
-
+            start_at += DEFAULT_LIMIT    
         self.data = self._prepare_records()
 
     def _format_record(self, data: Dict) -> Dict:

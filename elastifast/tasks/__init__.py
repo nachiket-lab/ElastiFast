@@ -83,6 +83,7 @@ def ingest_data_to_elasticsearch(self, data: dict, dataset: str, namespace: str)
     index_name = f"logs-{dataset}-{namespace}"
     try:
         client = ElasticsearchIngestData(esclient=esclient, data=data, index_name=index_name)
+        return common_output(data=client, object=True)
     except (ConnectionError, TimeoutError, ConnectionTimeout, TransportError) as e:
         logger.info(
             f"Error of type {type(e)} occured. Retrying task, attempt number: {self.request.retries}/{self.max_retries}"
@@ -92,7 +93,7 @@ def ingest_data_to_elasticsearch(self, data: dict, dataset: str, namespace: str)
         logger.error(
             f"Error of type {type(e)} occured while ingesting data: {e}. Exiting now."
         )
-    return common_output(data=client, object=True)
+        raise
 
 
 @shared_task(retry_backoff=True, max_retries=5)

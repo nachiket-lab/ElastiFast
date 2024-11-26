@@ -5,8 +5,10 @@ from elastifast.config import logger
 
 
 class ElasticsearchIngestData:
-    def __init__(self, esclient, data: list, index_name: str):
+    def __init__(self, esclient, data: list, dataset: str, namespace: str):
         self.esclient = esclient
+        self.data = data
+        self.index_name = f"logs-{dataset}-{namespace}"
         self.run()
 
     def _prep_data(self):
@@ -22,7 +24,7 @@ class ElasticsearchIngestData:
             raise
         try:
             res = bulk(self.esclient, self.data)
-            self.message = f"Data ingested by {self.esclient.__class__.__name__}:  success={len(res[0])} events, failure={len(res[1])} events"
+            self.message = f"Data ingested by {self.esclient.__class__.__name__}:  success={res[0]} events, failure={res[1]} events"
         except BulkIndexError as e:
             self.message = f"Indexing error while ingesting data: {e.errors}."
             logger.error(message)
