@@ -53,7 +53,7 @@ def common_output(data, object=False):
             "class": data.__class__.__name__,
             "message": data.message
         }
-    elif type(data) == dict:
+    elif type(data) == dict and object is not True:
         _d = {
             "message": data.get("message"),
             **{k: v for k, v in data.items() if k != "message"},
@@ -83,7 +83,6 @@ def ingest_data_to_elasticsearch(self, data: dict, dataset: str, namespace: str)
     index_name = f"logs-{dataset}-{namespace}"
     try:
         client = ElasticsearchIngestData(esclient=esclient, data=data, index_name=index_name)
-        return common_output(client, object=True)
     except (ConnectionError, TimeoutError, ConnectionTimeout, TransportError) as e:
         logger.info(
             f"Error of type {type(e)} occured. Retrying task, attempt number: {self.request.retries}/{self.max_retries}"
@@ -93,6 +92,7 @@ def ingest_data_to_elasticsearch(self, data: dict, dataset: str, namespace: str)
         logger.error(
             f"Error of type {type(e)} occured while ingesting data: {e}. Exiting now."
         )
+    return common_output(data=client, object=True)
 
 
 @shared_task(retry_backoff=True, max_retries=5)
