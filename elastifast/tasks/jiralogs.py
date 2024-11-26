@@ -22,7 +22,7 @@ class JiraAuditLogIngestor:
         logger.debug(f"Jira logs puller - From time: {from_time}, To time: {to_time}")
         return from_time, to_time
     
-    def fetch_audit_logs(self, interval_minutes=5, max_results=1000):
+    def get_events(self, interval_minutes=5, max_results=1000):
         from_time, to_time = self._get_time_range(interval_minutes)
         start_at = 0
 
@@ -36,13 +36,14 @@ class JiraAuditLogIngestor:
             response = requests.get(self.jira_url, headers=self.headers, auth=self.auth, params=params)
             
             if response.status_code != 200:
-                print(f"Failed to fetch data: {response.status_code} - {response.text}")
+                logger.error(f"Failed to fetch data: {response.status_code} - {response.text}")
                 break
 
             data = response.json()
             self.records.extend(data.get('records', []))
 
             if start_at + max_results >= data.get('total', 0):
+                logger.info(f"Fetched {len(self.records)} records from Jira")
                 break
 
             start_at += max_results

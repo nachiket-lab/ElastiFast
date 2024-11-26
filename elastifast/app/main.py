@@ -15,7 +15,7 @@ from fastapi.responses import JSONResponse
 
 from elastifast.config import logger, settings
 from elastifast.models.elasticsearch import ElasticsearchClient
-from elastifast.tasks import ingest_data_from_atlassian, ingest_data_to_elasticsearch
+from elastifast.tasks import ingest_data_from_atlassian, ingest_data_to_elasticsearch, ingest_data_from_jira
 from elastifast.tasks.monitor import get_celery_tasks
 
 app = FastAPI()
@@ -116,7 +116,7 @@ async def atlassian_data(
 ) -> Dict[str, Any]:
     if (
         settings.atlassian_org_id is not None
-        and settings.atlassian_secret_token is not None
+        or settings.atlassian_secret_token is not None
     ):
         logger.debug("Atlassian credentials found")
         # Trigger the Celery task with the delta value
@@ -138,3 +138,37 @@ async def atlassian_data(
         logger.error("Atlassian credentials not found")
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"error": "Missing Atlassian credentials in settings.yaml"}
+
+
+@app.get("/jira")
+async def jira_data(
+    response: Response,
+    delta: int = Query(5, ge=0, le=360, description="Time delta in minutes (0 to 360)"),
+    dataset: str = "jira.audit",
+    namespace: str = "default",
+) -> Dict[str, Any]:
+    if (
+        settings.jira_org_id is not None
+        or settings.jira_username is not None
+        or settings.jira_api_key is not None
+    ):
+        logger.debug("Jira credentials found")
+        # Trigger the Celery task with the delta value
+        task = ingest_data_from_jira.delay(
+            interval=delta, dataset=dataset, namespace=namespace
+        )
+
+        # Create an AsyncResult object to track the task
+        task_result = AsyncResult(task.id)
+
+        # Return the task details
+        return {
+            "task_id": task.id,
+            "task_name": ingest_data_from_jira.name,  # Get the task name from the task itself
+            "task_status": task_result.status,
+            "task_result": task_result.result,  # This will be None if the task hasn't finished yet
+        }
+    else:
+        logger.error("Jira credentials not found")
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"error": "Missing Jira credentials in settings.yaml"}

@@ -9,13 +9,14 @@ DEFAULT_LIMIT = 500
 
 
 class AtlassianAPIClient:
-    def __init__(self, secret_token: str):
+    def __init__(self, org_id, secret_token: str):
         """
         Initialize the Atlassian API client.
 
         Args:
             secret_token (str): The API token for authorization.
         """
+        self.org_id = org_id
         self.secret_token = secret_token
         self.headers = {
             "Accept": "application/json",
@@ -46,12 +47,11 @@ class AtlassianAPIClient:
             round(end_time.timestamp() * 1000),
         )
 
-    def build_url(self, org_id: str, time_delta: int, limit: int = DEFAULT_LIMIT) -> str:
+    def build_url(self, time_delta: int, limit: int = DEFAULT_LIMIT) -> str:
         """
         Build the Atlassian API URL for fetching events.
 
         Args:
-            org_id (str): Organization ID.
             time_delta (int): Time delta in minutes.
             limit (int): Maximum number of records to fetch per request.
 
@@ -60,7 +60,7 @@ class AtlassianAPIClient:
         """
         start_time, end_time = self.calculate_time_window(time_delta)
         return (
-            f"https://api.atlassian.com/admin/v1/orgs/{org_id}/events?from={start_time}&to={end_time}&limit={limit}"
+            f"https://api.atlassian.com/admin/v1/orgs/{self.org_id}/events?from={start_time}&to={end_time}&limit={limit}"
         )
 
     def fetch_data(self, url: str) -> Optional[Dict]:
@@ -81,7 +81,7 @@ class AtlassianAPIClient:
             logger.error(f"Error querying data from Atlassian: {e}")
             return None
 
-    def get_events(self, org_id: str, time_delta: int = 5) -> List[Dict]:
+    def get_events(self, time_delta: int = 5) -> List[Dict]:
         """
         Retrieve all events from the Atlassian API for the given time window.
 
@@ -92,7 +92,7 @@ class AtlassianAPIClient:
         Returns:
             List[Dict]: List of event records.
         """
-        url = self.build_url(org_id, time_delta)
+        url = self.build_url(time_delta)
         self.data = []
 
         while url:

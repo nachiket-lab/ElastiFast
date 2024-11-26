@@ -58,6 +58,9 @@ class Settings(BaseSettings):
     elasticapm_environment: Optional[str] = "production"
     atlassian_org_id: Optional[str] = None
     atlassian_secret_token: Optional[str] = None
+    jira_url: Optional[AnyUrl] = None
+    jira_username: Optional[str] = None
+    jira_api_key: Optional[str] = None
     celery_index_name: Optional[str] = "logs-celery.results-default"
     celery_index_patterns: Optional[list] = ["logs-celery.results-*"]
 
@@ -165,22 +168,6 @@ class Settings(BaseSettings):
                 "Invalid Celery broker URL. Must be one of: redis, amqp, amqps, sqs."
             )
         return value
-
-    # @field_validator("celery_result_backend")
-    # def validate_celery_result_backend(cls, value):
-    #     if not value.scheme in [
-    #         "redis",
-    #         "amqp",
-    #         "amqps",
-    #         "sqs",
-    #         "elasticsearch",
-    #         "elasticsearch+https",
-    #     ]:
-    #         raise ValueError(
-    #             "Invalid Celery result backend. Must be one of: redis, amqp, amqps, sqs, elasticsearch."
-    #         )
-    #     return value
-
 
 # Load settings from YAML file or environment variables
 def load_settings() -> Settings:
