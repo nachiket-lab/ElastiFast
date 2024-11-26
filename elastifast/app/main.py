@@ -148,7 +148,7 @@ async def jira_data(
     namespace: str = "default",
 ) -> Dict[str, Any]:
     if (
-        settings.jira_org_id is not None
+        settings.jira_url is not None
         or settings.jira_username is not None
         or settings.jira_api_key is not None
     ):
