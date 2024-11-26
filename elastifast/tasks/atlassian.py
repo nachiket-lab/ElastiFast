@@ -1,4 +1,5 @@
-from typing import List, Optional, Tuple, Dict
+from typing import Dict, List, Optional, Tuple
+
 from elastifast.config import logger
 from elastifast.models.apiclient import AbstractAPIClient
 
@@ -25,7 +26,9 @@ class AtlassianAPIClient(AbstractAPIClient):
             org_id (str): The organization ID.
             secret_token (str): The API token for authorization.
         """
-        super().__init__(interval=interval, headers={"Authorization": f"Bearer {secret_token}"})
+        super().__init__(
+            interval=interval, headers={"Authorization": f"Bearer {secret_token}"}
+        )
         self.org_id = org_id
         self.build_api_request()
 

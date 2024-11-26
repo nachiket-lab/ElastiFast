@@ -4,18 +4,16 @@ from typing import Any, Dict
 
 from celery.result import AsyncResult
 from elasticapm.contrib.starlette import ElasticAPM, make_apm_client
-from elasticsearch.exceptions import (
-    ConnectionError,
-    NotFoundError,
-    RequestError,
-    TransportError,
-)
+from elasticsearch.exceptions import (ConnectionError, NotFoundError,
+                                      RequestError, TransportError)
 from fastapi import FastAPI, Query, Response, status
 from fastapi.responses import JSONResponse
 
 from elastifast.config import logger, settings
 from elastifast.models.elasticsearch import ElasticsearchClient
-from elastifast.tasks import ingest_data_from_atlassian, ingest_data_to_elasticsearch, ingest_data_from_jira
+from elastifast.tasks import (ingest_data_from_atlassian,
+                              ingest_data_from_jira,
+                              ingest_data_to_elasticsearch)
 from elastifast.tasks.monitor import get_celery_tasks
 
 app = FastAPI()

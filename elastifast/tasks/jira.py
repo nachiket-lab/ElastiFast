@@ -1,11 +1,15 @@
-from tracemalloc import start
-from elastifast.config import logger
-import requests
 import re
-from typing import List, Dict, Tuple
+from tracemalloc import start
+from typing import Dict, List, Tuple
+
+import requests
+
+from elastifast.config import logger
 from elastifast.models.apiclient import AbstractAPIClient
 
 DEFAULT_LIMIT = 1000
+
+
 class JiraAuditLogIngestor(AbstractAPIClient):
     """
     A class to fetch and process Jira audit logs.
@@ -32,10 +36,13 @@ class JiraAuditLogIngestor(AbstractAPIClient):
         self._data = []
 
     def build_api_request(self):
-        self._from_time = self.start_time.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + "+0000"
-        self._to_time = self.end_time.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + "+0000"
-        logger.debug(f"Jira logs puller - From time: {self._from_time}, To time: {self._to_time}")        
-
+        self._from_time = (
+            self.start_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "+0000"
+        )
+        self._to_time = self.end_time.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "+0000"
+        logger.debug(
+            f"Jira logs puller - From time: {self._from_time}, To time: {self._to_time}"
+        )
 
     def get_events(self):
         start_at = 0
@@ -60,10 +67,8 @@ class JiraAuditLogIngestor(AbstractAPIClient):
                 break
 
             start_at += DEFAULT_LIMIT
-        
+
         self.data = self._prepare_records()
-
-
 
     def _format_record(self, data: Dict) -> Dict:
         """
@@ -79,16 +84,18 @@ class JiraAuditLogIngestor(AbstractAPIClient):
             if data.get("summary") == "Custom field created":
                 data.pop("changedValues", None)  # Safely remove the key if it exists
 
-            pattern = r'\"(.*?)\"'
+            pattern = r"\"(.*?)\""
             formatted_message = re.sub(pattern, r"'\1'", str(data).replace('"', "'"))
-            formatted_message = formatted_message.replace("'{", '"{').replace("}'", '}"')
+            formatted_message = formatted_message.replace("'{", '"{').replace(
+                "}'", '}"'
+            )
 
             return {
                 "@timestamp": self.current_time.isoformat(),
                 "message": formatted_message,
             }
         except Exception as e:
-            logger.warning(f"Error processing record: {e}")
+            logger.error(f"Error processing record: {e}")
             return {}
 
     def _prepare_records(self) -> List[Dict]:

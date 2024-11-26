@@ -86,9 +86,7 @@ class Settings(BaseSettings):
             try:
                 import celery
                 from elasticapm.contrib.celery import (
-                    register_exception_tracking,
-                    register_instrumentation,
-                )
+                    register_exception_tracking, register_instrumentation)
 
                 register_instrumentation(client)
                 register_exception_tracking(client)
@@ -168,6 +166,7 @@ class Settings(BaseSettings):
                 "Invalid Celery broker URL. Must be one of: redis, amqp, amqps, sqs."
             )
         return value
+
 
 # Load settings from YAML file or environment variables
 def load_settings() -> Settings:
