@@ -10,6 +10,7 @@ from elasticsearch.exceptions import ConnectionError, ConnectionTimeout, Transpo
 from elastifast.config import logger, settings
 from elastifast.models.elasticsearch import ElasticsearchClient
 from elastifast.tasks.atlassian import AtlassianAPIClient
+from elastifast.tasks.postman import postmanauditlogger
 from elastifast.tasks.ingest_es import index_data
 from elastifast.tasks.setup_es import ensure_es_deps
 
@@ -92,6 +93,25 @@ def ingest_data_from_atlassian(interval: int, dataset: str, namespace: str):
     except Exception as e:
         logger.error(
             f"Error of type {type(e)} occured while polling data from atlassian: {e}. Exiting now."
+        )
+    ingest_data_to_elasticsearch.delay(
+        data=res["data"], dataset=dataset, namespace=namespace
+    )
+    return common_output(res)
+
+
+@shared_task(retry_backoff=True, max_retries=5)
+def ingest_data_from_postman(interval: int, dataset: str, namespace: str):
+    client = postmanauditlogger(secret_token=settings.postman_secret_token)
+    try:
+        data = client.get_events(time_delta=interval)
+        res = {
+            "data": data,
+            "message": f"Data ingested from Postman {len(data)} events",
+        }
+    except Exception as e:
+        logger.error(
+            f"Error of type {type(e)} occured while polling data from postman: {e}. Exiting now."
         )
     ingest_data_to_elasticsearch.delay(
         data=res["data"], dataset=dataset, namespace=namespace
