@@ -2,12 +2,13 @@ import re
 import sys
 from pydoc import cli
 
+from annotated_types import T
 import elasticapm
 from celery import Celery, current_task, shared_task
 from celery.signals import after_setup_logger
 from elasticsearch.exceptions import (ConnectionError, ConnectionTimeout,
                                       TransportError)
-
+import ecs_logging
 from elastifast.config.setting import settings
 from elastifast.config.logging import logger
 from elastifast.models.elasticsearch import ElasticsearchClient
@@ -32,6 +33,32 @@ celery_app = Celery(
     broker=str(settings.celery_broker_url),
     backend=str(settings.celery_result_backend),
 )
+interval = 2.0
+namespace = "default"
+
+if settings.celery_beat_schedule is True:
+    celery_app.conf.beat_schedule = {
+        "ingest_data_from_atlassian": {
+            "task": "elastifast.tasks.ingest_data_from_atlassian",
+            "schedule": interval,
+            "args": (interval, "atlassian", namespace),
+        },
+        "ingest_data_from_jira": {
+            "task": "elastifast.tasks.ingest_data_from_jira",
+            "schedule": interval,
+            "args": (interval, "jira", namespace),
+        },
+        "ingest_data_from_zendesk": {
+            "task": "elastifast.tasks.ingest_data_from_zendesk",
+            "schedule": interval,
+            "args": (interval, "zendesk", namespace),
+        },
+        "ingest_data_from_postman": {
+            "task": "elastifast.tasks.ingest_data_from_postman",
+            "schedule": interval,
+            "args": (interval, "postman", namespace),
+        },
+    }
 
 
 @after_setup_logger.connect
@@ -82,7 +109,7 @@ def ingest_data_to_elasticsearch(self, data: dict, dataset: str, namespace: str)
     index_name = f"logs-{dataset}-{namespace}"
     try:
         client = ElasticsearchIngestData(
-            esclient=esclient, data=data, index_name=index_name
+            esclient=esclient, data=data, dataset=dataset, namespace=namespace
         )
         return common_output(data=client, object=True)
     except (ConnectionError, TimeoutError, ConnectionTimeout, TransportError) as e:
@@ -171,7 +198,7 @@ def ingest_data_from_postman(interval: int, dataset: str, namespace: str):
     )
     return res
 
-
+@shared_task(retry_backoff=True, max_retries=5)
 def ingest_data_from_zendesk(interval: int, dataset: str, namespace: str):
     if settings.zendesk_username is None or settings.zendesk_api_key is None:
         raise ValueError(
