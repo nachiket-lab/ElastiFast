@@ -15,6 +15,7 @@ from elastifast.tasks.atlassian import AtlassianAPIClient
 from elastifast.tasks.ingest_es import ElasticsearchIngestData
 from elastifast.tasks.jira import JiraAuditLogIngestor
 from elastifast.tasks.zendesk import ZendeskAuditLogIngestor
+from elastifast.tasks.postman import PostmanAuditLogIngestor
 from elastifast.tasks.setup_es import ensure_es_deps
 
 esclient = ElasticsearchClient().client
@@ -169,4 +170,26 @@ def ingest_data_from_zendesk(interval: int, dataset: str, namespace: str):
     ingest_data_to_elasticsearch.delay(
         data=client.data, dataset=dataset, namespace=namespace
     )
+    return res
+
+@shared_task(retry_backoff=True, max_retries=5)
+def ingest_data_from_postman(interval: int, dataset: str, namespace: str):
+    if settings.postman_api_key is None:
+        raise ValueError(
+            "Postman API key not found. Please set POSTMAN_API_KEY variable."
+        )
+    client = PostmanAuditLogIngestor(
+        api_key=settings.postman_api_key,
+        interval=interval,
+    )
+    try:
+        client.get_events()
+        res = common_output(data=client, object=True)
+    except Exception as e:
+        logger.error(
+            f"Error of type {type(e)} occured while polling data from postman: {e}. Exiting now."
+        )
+    ingest_data_to_elasticsearch.delay(
+        data=client.data, dataset=dataset, namespace=namespace  
+        )
     return res
