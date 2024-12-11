@@ -2,7 +2,7 @@ from email import message
 
 from elasticsearch.helpers import BulkIndexError, bulk
 
-from elastifast.config import logger
+from elastifast.config.logging import logger
 
 
 class ElasticsearchIngestData:

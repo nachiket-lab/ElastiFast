@@ -2,14 +2,14 @@ import re
 import sys
 from pydoc import cli
 
-import ecs_logging
 import elasticapm
 from celery import Celery, current_task, shared_task
 from celery.signals import after_setup_logger
 from elasticsearch.exceptions import (ConnectionError, ConnectionTimeout,
                                       TransportError)
 
-from elastifast.config import logger, settings
+from elastifast.config.setting import settings
+from elastifast.config.logging import logger
 from elastifast.models.elasticsearch import ElasticsearchClient
 from elastifast.tasks.atlassian import AtlassianAPIClient
 from elastifast.tasks.ingest_es import ElasticsearchIngestData
@@ -28,7 +28,7 @@ else:
 
 # Create a Celery app
 celery_app = Celery(
-    "NSE",
+    "ElastiFast",
     broker=str(settings.celery_broker_url),
     backend=str(settings.celery_result_backend),
 )
@@ -181,6 +181,7 @@ def ingest_data_from_zendesk(interval: int, dataset: str, namespace: str):
         interval=interval,
         username=settings.zendesk_username,
         api_key=settings.zendesk_api_key,
+        tenant=settings.zendesk_tenant,
     )
     try:
         client.get_events()

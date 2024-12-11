@@ -1,34 +1,12 @@
-import logging
 from re import I
 from typing import Optional
 from urllib.parse import quote
-from venv import logger
-
-import ecs_logging
 import yaml
 from elasticapm.contrib.starlette import ElasticAPM, make_apm_client
 from pydantic import AnyUrl, ValidationError, field_validator, model_validator
 from pydantic_settings import BaseSettings
 from typing_extensions import Self
-
-
-def create_ecs_logger():
-    """
-    Creates a logger that logs messages in ECS format (https://www.elastic.co/guide/en/ecs/current/index.html).
-
-    Returns:
-        logging.Logger: The ecs logger.
-    """
-    alogger = logging.getLogger(__name__)
-    alogger.setLevel(logging.INFO)
-
-    # Configure the logger to use ECS formatter
-    handler = logging.StreamHandler()
-    handler.setFormatter(ecs_logging.StdlibFormatter())
-    alogger.addHandler(handler)
-
-    return alogger
-
+from elastifast.config.logging import logger
 
 # Define a base settings class with validationfrom pydantic import BaseSettings, AnyUrl
 class Settings(BaseSettings):
@@ -63,6 +41,8 @@ class Settings(BaseSettings):
     jira_api_key: Optional[str] = None
     zendesk_username: Optional[str] = None
     zendesk_api_key: Optional[str] = None
+    zendesk_tenant: Optional[str] = None
+    postman_secret_token: Optional[str] = None
     celery_index_name: Optional[str] = "logs-celery.results-default"
     celery_index_patterns: Optional[list] = ["logs-celery.results-*"]
 
@@ -188,3 +168,5 @@ def load_settings() -> Settings:
     except yaml.YAMLError as e:
         logger.error(f"Error parsing YAML: {e}")
         raise
+
+settings = load_settings()

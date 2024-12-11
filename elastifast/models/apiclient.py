@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Tuple
 import requests
 from requests.auth import HTTPBasicAuth
 
-from elastifast.config import logger
+from elastifast.config.logging import logger
 
 
 class AbstractAPIClient(ABC):
@@ -23,8 +23,6 @@ class AbstractAPIClient(ABC):
         start_time=None,
         end_time=None,
     ):
-        if interval is None or (start_time is None and end_time is None):
-            raise ValueError("interval or start_time and end_time must be provided ")
         self.current_time = datetime.now(timezone.utc).replace(second=0, microsecond=0)
         self.interval = interval
         if self.interval:
@@ -33,6 +31,8 @@ class AbstractAPIClient(ABC):
             self.start_time, self.end_time = datetime.fromisoformat(
                 start_time, timezone=timezone.utc
             ), datetime.fromisoformat(end_time, timezone=timezone.utc)
+        else:
+            raise ValueError("interval or start_time and end_time must be provided ")
         self.url = base_url
         self.data = []
         self.headers = {"Accept": "application/json", **(headers or {})}
@@ -43,8 +43,8 @@ class AbstractAPIClient(ABC):
         self.params = params
 
     def calculate_time_window(self) -> Tuple[str, str]:
-        start_time = self.current_time - timedelta(minutes=self._interval * 2)
-        end_time = self.current_time - timedelta(minutes=self._interval)
+        start_time = self.current_time - timedelta(minutes=self.interval * 2)
+        end_time = self.current_time - timedelta(minutes=self.interval)
         return (start_time, end_time)
 
     def fetch_data(self, API_TIMEOUT: int = 10) -> Optional[Dict]:
@@ -68,7 +68,7 @@ class AbstractAPIClient(ABC):
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error querying data from Atlassian: {e}")
+            logger.error(f"Error querying data from {self.__class__.__name__}: {e}")
             raise
 
     @abstractmethod

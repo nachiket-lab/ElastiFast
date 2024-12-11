@@ -9,7 +9,8 @@ from elasticsearch.exceptions import (ConnectionError, NotFoundError,
 from fastapi import FastAPI, Query, Response, status
 from fastapi.responses import JSONResponse
 
-from elastifast.config import logger, settings
+from elastifast.config.logging import logger
+from elastifast.config.setting import settings
 from elastifast.models.elasticsearch import ElasticsearchClient
 from elastifast.tasks import (ingest_data_from_atlassian,
                               ingest_data_from_jira, ingest_data_from_postman,

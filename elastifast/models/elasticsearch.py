@@ -1,6 +1,6 @@
 from elasticsearch import Elasticsearch
 
-from elastifast.config import settings
+from elastifast.config.setting import settings
 
 
 class ElasticsearchClient(object):

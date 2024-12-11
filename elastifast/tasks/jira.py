@@ -4,7 +4,7 @@ from typing import Dict, List, Tuple
 
 import requests
 
-from elastifast.config import logger
+from elastifast.config.logging import logger
 from elastifast.models.apiclient import AbstractAPIClient
 
 DEFAULT_LIMIT = 10000
