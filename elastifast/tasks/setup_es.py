@@ -1,6 +1,6 @@
 from elasticsearch import NotFoundError
 
-from elastifast.config import logger
+from elastifast.config.logging import logger
 from elastifast.models.elasticsearch import ElasticsearchClient
 
 es = ElasticsearchClient().client
