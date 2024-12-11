@@ -13,7 +13,8 @@ from elastifast.config import logger, settings
 from elastifast.models.elasticsearch import ElasticsearchClient
 from elastifast.tasks import (ingest_data_from_atlassian,
                               ingest_data_from_jira,
-                              ingest_data_to_elasticsearch)
+                              ingest_data_to_elasticsearch,
+                              ingest_data_from_postman)
 from elastifast.tasks.monitor import get_celery_tasks
 
 app = FastAPI()
@@ -200,3 +201,32 @@ async def jira_data(
         logger.error("Jira credentials not found")
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"error": "Missing Jira credentials in settings.yaml"}
+
+@app.get("/postman")
+async def postman_data(
+    response: Response,
+    interval: int = Query(5, ge=0, le=360, description="Time delta in minutes (0 to 360)"),
+    dataset: str = "postman.audit",
+    namespace: str = "default",
+) -> Dict[str, Any]:
+    if settings.postman_secret_token is not None:
+        logger.debug("Postman credentials found")
+        # Trigger the Celery task with the delta value
+        task = ingest_data_from_postman.delay(
+            interval=interval, dataset=dataset, namespace=namespace
+        )
+
+        # Create an AsyncResult object to track the task
+        task_result = AsyncResult(task.id)
+
+        # Return the task details
+        return {
+            "task_id": task.id,
+            "task_name": ingest_data_from_postman.name,  # Get the task name from the task itself
+            "task_status": task_result.status,
+            "task_result": task_result.result,  # This will be None if the task hasn't finished yet 
+        }
+    else:
+        logger.error("Postman credentials not found")
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"error": "Missing Postman credentials in settings.yaml"}
