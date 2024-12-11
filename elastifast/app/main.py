@@ -14,7 +14,8 @@ from elastifast.models.elasticsearch import ElasticsearchClient
 from elastifast.tasks import (ingest_data_from_atlassian,
                               ingest_data_from_jira,
                               ingest_data_to_elasticsearch,
-                              ingest_data_from_postman)
+                              ingest_data_from_postman
+                              ingest_data_from_zendesk)
 from elastifast.tasks.monitor import get_celery_tasks
 
 app = FastAPI()
@@ -215,7 +216,6 @@ async def postman_data(
         task = ingest_data_from_postman.delay(
             interval=interval, dataset=dataset, namespace=namespace
         )
-
         # Create an AsyncResult object to track the task
         task_result = AsyncResult(task.id)
 
@@ -230,3 +230,33 @@ async def postman_data(
         logger.error("Postman credentials not found")
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"error": "Missing Postman credentials in settings.yaml"}
+
+
+          
+@app.get("/zendesk")
+async def zendesk_data(
+    response: Response,
+    delta: int = Query(5, ge=0, le=360, description="Time delta in minutes (0 to 360)"),
+    dataset: str = "zendesk.audit",
+    namespace: str = "default",
+) -> Dict[str, Any]:
+    if (
+        settings.zendesk_username is not None
+        or settings.zendesk_api_key is not None
+    ):
+        logger.debug("Zendesk credentials found")
+        # Trigger the Celery task with the delta value
+        task: AsyncResult = ingest_data_from_zendesk.delay(
+            interval=delta, dataset=dataset, namespace=namespace
+        )
+
+        # Create an AsyncResult object to track the task
+        task_result = AsyncResult(task.id)
+
+        # Return the task details
+        return {
+            "task_id": task.id,
+            "task_name": ingest_data_from_zendesk.name,  # Get the task name from the task itself
+            "task_status": task_result.status,
+            "task_result": task_result.result,  # This will be None if the task hasn't finished yet
+        }

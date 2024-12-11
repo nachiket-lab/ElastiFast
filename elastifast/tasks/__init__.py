@@ -15,6 +15,7 @@ from elastifast.tasks.atlassian import AtlassianAPIClient
 from elastifast.tasks.ingest_es import ElasticsearchIngestData
 from elastifast.tasks.jira import JiraAuditLogIngestor
 from elastifast.tasks.postman import PostmanAuditLogIngestor
+from elastifast.tasks.zendesk import ZendeskAuditLogIngestor
 from elastifast.tasks.setup_es import ensure_es_deps
 
 esclient = ElasticsearchClient().client
@@ -162,7 +163,29 @@ def ingest_data_from_postman(interval: int, dataset: str, namespace: str):
         res = common_output(data=client, object=True)
     except Exception as e:
         logger.error(
-            f"Error of type {type(e)} occured while polling data from postman: {e}. Exiting now."
+          f"Error of type {type(e)} occured while polling data from postman: {e}. Exiting now."
+        )
+    ingest_data_to_elasticsearch.delay(
+        data=client.data, dataset=dataset, namespace=namespace
+    )
+    return res
+        
+def ingest_data_from_zendesk(interval: int, dataset: str, namespace: str):
+    if settings.zendesk_username is None or settings.zendesk_api_key is None:
+        raise ValueError(
+            "Zendesk credentials not found. Please set ZENDESK_USERNAME and ZENDESK_API_KEY variables."
+        )
+    client = ZendeskAuditLogIngestor(
+        interval=interval,
+        username=settings.zendesk_username,
+        api_key=settings.zendesk_api_key,
+    )
+    try:
+        client.get_events()
+        res = common_output(data=client, object=True)
+    except Exception as e:
+        logger.error(
+            f"Error of type {type(e)} occured while polling data from zendesk: {e}. Exiting now."
         )
     ingest_data_to_elasticsearch.delay(
         data=client.data, dataset=dataset, namespace=namespace
