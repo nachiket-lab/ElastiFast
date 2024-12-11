@@ -61,6 +61,8 @@ class Settings(BaseSettings):
     jira_url: Optional[AnyUrl] = None
     jira_username: Optional[str] = None
     jira_api_key: Optional[str] = None
+    zendesk_username: Optional[str] = None
+    zendesk_api_key: Optional[str] = None
     celery_index_name: Optional[str] = "logs-celery.results-default"
     celery_index_patterns: Optional[list] = ["logs-celery.results-*"]
 
