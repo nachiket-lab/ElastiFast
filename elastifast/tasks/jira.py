@@ -55,7 +55,6 @@ class JiraAuditLogIngestor(AbstractAPIClient):
                 "from": self._from_time,
                 "to": self._to_time,
             }
-            data = self.fetch_data()
             try:
                 data = self.fetch_data()
                 print(f"loop for get events {data.get('total', 0)} exist. Records: {len(data.get("records", 0))}")

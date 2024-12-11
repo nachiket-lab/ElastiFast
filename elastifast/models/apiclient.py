@@ -25,7 +25,12 @@ class AbstractAPIClient(ABC):
     ):
         if interval is None or (start_time is None and end_time is None):
             raise ValueError("interval or start_time and end_time must be provided ")
+        self.current_time = datetime.now(timezone.utc).replace(second=0, microsecond=0)
         self.interval = interval
+        if self.interval:
+            self.start_time, self.end_time = self.calculate_time_window()
+        elif start_time and end_time:
+            self.start_time, self.end_time = datetime.fromisoformat(start_time, timezone=timezone.utc), datetime.fromisoformat(end_time, timezone=timezone.utc)
         self.url = base_url
         self.data = []
         self.headers = {"Accept": "application/json", **(headers or {})}
@@ -34,11 +39,6 @@ class AbstractAPIClient(ABC):
         else:
             self.auth = None
         self.params = params
-        self.current_time = datetime.now(timezone.utc).replace(second=0, microsecond=0)
-        if self.interval:
-            self.start_time, self.end_time = self.calculate_time_window()
-        elif start_time and end_time:
-            self.start_time, self.end_time = datetime.fromisoformat(start_time, timezone=timezone.utc), datetime.fromisoformat(end_time, timezone=timezone.utc)
 
     def calculate_time_window(self) -> Tuple[str, str]:
         start_time = self.current_time - timedelta(minutes=self._interval * 2)
