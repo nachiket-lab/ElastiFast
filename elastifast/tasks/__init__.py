@@ -49,18 +49,15 @@ def setup_tasks(sender, **kwargs):
 
 def common_output(data, object=False):
     if object:
-        _d = {
-            "class": data.__class__.__name__,
-            "message": data.message
-        }
+        _d = {"class": data.__class__.__name__, "message": data.message}
     elif type(data) == dict and object is not True:
         _d = {
             "message": data.get("message"),
             **{k: v for k, v in data.items() if k != "message"},
         }
-    else: 
+    else:
         _d = {}
-    d= {
+    d = {
         "transaction": {
             "id": elasticapm.get_transaction_id(),
         },
@@ -68,7 +65,7 @@ def common_output(data, object=False):
             "id": elasticapm.get_trace_id(),
             "name": current_task.name,
         },
-        **_d
+        **_d,
     }
     return d
 
@@ -82,7 +79,9 @@ def common_output(data, object=False):
 def ingest_data_to_elasticsearch(self, data: dict, dataset: str, namespace: str):
     index_name = f"logs-{dataset}-{namespace}"
     try:
-        client = ElasticsearchIngestData(esclient=esclient, data=data, index_name=index_name)
+        client = ElasticsearchIngestData(
+            esclient=esclient, data=data, index_name=index_name
+        )
         return common_output(data=client, object=True)
     except (ConnectionError, TimeoutError, ConnectionTimeout, TransportError) as e:
         logger.info(
@@ -103,7 +102,9 @@ def ingest_data_from_atlassian(interval: int, dataset: str, namespace: str):
             "Atlassian credentials not found. Please set ATLASSIAN_ORG_ID and ATLASSIAN_SECRET_TOKEN variables."
         )
     client = AtlassianAPIClient(
-        org_id=settings.atlassian_org_id, secret_token=settings.atlassian_secret_token, interval=interval
+        org_id=settings.atlassian_org_id,
+        secret_token=settings.atlassian_secret_token,
+        interval=interval,
     )
     try:
         client.get_events()

@@ -140,6 +140,7 @@ async def atlassian_data(
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"error": "Missing Atlassian credentials in settings.yaml"}
 
+
 @app.get("/atlassian/retry")
 async def atlassian_data_retry(
     response: Response,
@@ -155,13 +156,17 @@ async def atlassian_data_retry(
         logger.debug("Atlassian credentials found")
         # Trigger the Celery task with the delta value
         task = ingest_data_from_atlassian.delay(
-            start_time=start_time, end_time=end_time, dataset=dataset, namespace=namespace
+            start_time=start_time,
+            end_time=end_time,
+            dataset=dataset,
+            namespace=namespace,
         )
         return response_object(task)
     else:
         logger.error("Atlassian credentials not found")
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"error": "Missing Atlassian credentials in settings.yaml"}
+
 
 @app.get("/jira")
 async def jira_data(

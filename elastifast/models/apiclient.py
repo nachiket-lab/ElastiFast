@@ -21,7 +21,7 @@ class AbstractAPIClient(ABC):
         password: str = None,
         params=None,
         start_time=None,
-        end_time=None
+        end_time=None,
     ):
         if interval is None or (start_time is None and end_time is None):
             raise ValueError("interval or start_time and end_time must be provided ")
@@ -30,7 +30,9 @@ class AbstractAPIClient(ABC):
         if self.interval:
             self.start_time, self.end_time = self.calculate_time_window()
         elif start_time and end_time:
-            self.start_time, self.end_time = datetime.fromisoformat(start_time, timezone=timezone.utc), datetime.fromisoformat(end_time, timezone=timezone.utc)
+            self.start_time, self.end_time = datetime.fromisoformat(
+                start_time, timezone=timezone.utc
+            ), datetime.fromisoformat(end_time, timezone=timezone.utc)
         self.url = base_url
         self.data = []
         self.headers = {"Accept": "application/json", **(headers or {})}
@@ -80,6 +82,8 @@ class AbstractAPIClient(ABC):
     @property
     def message(self):
         if len(self.data) > 0:
-            return f"Data ingested from {self.__class__.__name__} {len(self.data)} events"
+            return (
+                f"Data ingested from {self.__class__.__name__} {len(self.data)} events"
+            )
         else:
             return f"No data to ingest from {self.__class__.__name__}"

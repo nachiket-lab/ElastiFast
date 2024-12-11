@@ -1,4 +1,5 @@
 from email import message
+
 from elasticsearch.helpers import BulkIndexError, bulk
 
 from elastifast.config import logger
@@ -15,12 +16,14 @@ class ElasticsearchIngestData:
         for item in self.data:
             item["_index"] = self.index_name
             item["_op_type"] = "create"
-    
+
     def run(self):
         try:
             self._prep_data()
         except Exception as e:
-            self.message = f"Error of type {type(e)} occured while prepping the data: {e}."
+            self.message = (
+                f"Error of type {type(e)} occured while prepping the data: {e}."
+            )
             raise
         try:
             res = bulk(self.esclient, self.data)
