@@ -4,7 +4,7 @@ from elastifast.config.logging import logger
 from elastifast.models.apiclient import AbstractAPIClient
 
 # Constants
-DEFAULT_LIMIT = 1000
+DEFAULT_LIMIT = 300
 API_TIMEOUT = 30  # Timeout for API requests
 
 
