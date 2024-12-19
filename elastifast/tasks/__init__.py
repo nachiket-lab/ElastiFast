@@ -5,6 +5,7 @@ from pydoc import cli
 from annotated_types import T
 import elasticapm
 from celery import Celery, current_task, shared_task
+from celery.schedules import crontab
 from celery.signals import after_setup_logger
 from elasticsearch.exceptions import (ConnectionError, ConnectionTimeout,
                                       TransportError)
@@ -33,30 +34,29 @@ celery_app = Celery(
     broker=str(settings.celery_broker_url),
     backend=str(settings.celery_result_backend),
 )
-interval = 2.0
 namespace = "default"
 
 if settings.celery_beat_schedule is True:
     celery_app.conf.beat_schedule = {
         "ingest_data_from_atlassian": {
             "task": "elastifast.tasks.ingest_data_from_atlassian",
-            "schedule": interval,
-            "args": (interval, "atlassian", namespace),
+            "schedule": crontab(minute=f"*/{settings.celery_beat_interval}"),
+            "args": (settings.celery_beat_schedule, "atlassian", namespace),
         },
         "ingest_data_from_jira": {
             "task": "elastifast.tasks.ingest_data_from_jira",
-            "schedule": interval,
-            "args": (interval, "jira", namespace),
+            "schedule": crontab(minute=f"*/{settings.celery_beat_interval}"),
+            "args": (settings.celery_beat_schedule, "jira", namespace),
         },
         "ingest_data_from_zendesk": {
             "task": "elastifast.tasks.ingest_data_from_zendesk",
-            "schedule": interval,
-            "args": (interval, "zendesk", namespace),
+            "schedule": crontab(minute=f"*/{settings.celery_beat_interval}"),
+            "args": (settings.celery_beat_schedule, "zendesk", namespace),
         },
         "ingest_data_from_postman": {
             "task": "elastifast.tasks.ingest_data_from_postman",
-            "schedule": interval,
-            "args": (interval, "postman", namespace),
+            "schedule": crontab(minute=f"*/{settings.celery_beat_interval}"),
+            "args": (settings.celery_beat_schedule, "postman", namespace),
         },
     }
 
