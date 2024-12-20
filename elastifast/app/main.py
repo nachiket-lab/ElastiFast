@@ -134,7 +134,7 @@ async def atlassian_data(
         logger.debug("Atlassian credentials found")
         # Trigger the Celery task with the delta value
         task = ingest_data_from_atlassian.delay(
-            interval=delta, dataset=dataset, namespace=namespace
+            interval=delta, namespace=namespace, dataset=dataset
         )
         return response_object(task)
     else:
@@ -159,9 +159,9 @@ async def atlassian_data_retry(
         # Trigger the Celery task with the delta value
         task = ingest_data_from_atlassian.delay(
             start_time=start_time,
-            end_time=end_time,
-            dataset=dataset,
+            end_time=end_time,            
             namespace=namespace,
+            dataset=dataset,
         )
         return response_object(task)
     else:
@@ -185,7 +185,7 @@ async def jira_data(
         logger.debug("Jira credentials found")
         # Trigger the Celery task with the delta value
         task = ingest_data_from_jira.delay(
-            interval=delta, dataset=dataset, namespace=namespace
+            interval=delta, namespace=namespace, dataset=dataset
         )
 
         # Create an AsyncResult object to track the task
@@ -217,7 +217,7 @@ async def postman_data(
         logger.debug("Postman credentials found")
         # Trigger the Celery task with the delta value
         task = ingest_data_from_postman.delay(
-            interval=interval, dataset=dataset, namespace=namespace
+            interval=interval, namespace=namespace, dataset=dataset
         )
         # Create an AsyncResult object to track the task
         task_result = AsyncResult(task.id)
@@ -246,7 +246,7 @@ async def zendesk_data(
         logger.debug("Zendesk credentials found")
         # Trigger the Celery task with the delta value
         task: AsyncResult = ingest_data_from_zendesk.delay(
-            interval=delta, dataset=dataset, namespace=namespace
+            interval=delta, namespace=namespace, dataset=dataset
         )
 
         # Create an AsyncResult object to track the task

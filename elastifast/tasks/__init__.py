@@ -41,17 +41,17 @@ if settings.celery_beat_schedule is True:
         "ingest_data_from_atlassian": {
             "task": "elastifast.tasks.ingest_data_from_atlassian",
             "schedule": crontab(minute=f"*/{settings.celery_beat_interval}"),
-            "args": (settings.celery_beat_schedule, "atlassian", namespace),
+            "args": (settings.celery_beat_schedule, "atlassian.admin", namespace),
         },
         "ingest_data_from_jira": {
             "task": "elastifast.tasks.ingest_data_from_jira",
             "schedule": crontab(minute=f"*/{settings.celery_beat_interval}"),
-            "args": (settings.celery_beat_schedule, "jira", namespace),
+            "args": (settings.celery_beat_schedule, "jira.audit", namespace),
         },
         "ingest_data_from_zendesk": {
             "task": "elastifast.tasks.ingest_data_from_zendesk",
             "schedule": crontab(minute=f"*/{settings.celery_beat_interval}"),
-            "args": (settings.celery_beat_schedule, "zendesk", namespace),
+            "args": (settings.celery_beat_schedule, "zendesk.audit", namespace),
         },
         "ingest_data_from_postman": {
             "task": "elastifast.tasks.ingest_data_from_postman",
@@ -125,7 +125,7 @@ def ingest_data_to_elasticsearch(self, data: dict, dataset: str, namespace: str)
 
 
 @shared_task(retry_backoff=True, max_retries=5)
-def ingest_data_from_atlassian(interval: int, dataset: str, namespace: str):
+def ingest_data_from_atlassian(interval: int, namespace: str, dataset: str = "atlassian.admin"):
     if settings.atlassian_org_id is None or settings.atlassian_secret_token is None:
         raise ValueError(
             "Atlassian credentials not found. Please set ATLASSIAN_ORG_ID and ATLASSIAN_SECRET_TOKEN variables."
@@ -149,7 +149,7 @@ def ingest_data_from_atlassian(interval: int, dataset: str, namespace: str):
 
 
 @shared_task(retry_backoff=True, max_retries=5)
-def ingest_data_from_jira(interval: int, dataset: str, namespace: str):
+def ingest_data_from_jira(interval: int, namespace: str, dataset: str = "jira.audit"):
     if (
         settings.jira_url is None
         or settings.jira_username is None
@@ -178,7 +178,7 @@ def ingest_data_from_jira(interval: int, dataset: str, namespace: str):
 
 
 @shared_task(retry_backoff=True, max_retries=5)
-def ingest_data_from_postman(interval: int, dataset: str, namespace: str):
+def ingest_data_from_postman(interval: int, namespace: str, dataset: str = "postman.audit"):
     if settings.postman_secret_token is None:
         raise ValueError(
             "Postman credentials not found. Please set POSTMAN_SECRET_TOKEN variables."
@@ -199,7 +199,7 @@ def ingest_data_from_postman(interval: int, dataset: str, namespace: str):
     return res
 
 @shared_task(retry_backoff=True, max_retries=5)
-def ingest_data_from_zendesk(interval: int, dataset: str, namespace: str):
+def ingest_data_from_zendesk(interval: int, namespace: str, dataset: str="zendesk.audit"):
     if settings.zendesk_username is None or settings.zendesk_api_key is None:
         raise ValueError(
             "Zendesk credentials not found. Please set ZENDESK_USERNAME and ZENDESK_API_KEY variables."
