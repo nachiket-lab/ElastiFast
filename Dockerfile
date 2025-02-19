@@ -28,7 +28,7 @@ COPY pyproject.toml poetry.lock ./
 # Build wheels for dependencies
 RUN export PATH="/root/.local/bin:$PATH" \
     && pip install wheel \
-    && poetry install && \
+    && poetry install --no-root && \
     && poetry export --without-hashes -f requirements.txt -o requirements.txt \
     && pip wheel --no-cache-dir --wheel-dir=/wheels -r requirements.txt
 
