@@ -1,6 +1,9 @@
 # Stage 1: Build dependencies using a lightweight base
 FROM python:3.11-alpine AS builder
 
+# Environment variables
+ENV PATH="/root/.local/bin:$PATH"
+
 # Install build dependencies
 RUN apk add --no-cache \
     gcc \
@@ -9,7 +12,8 @@ RUN apk add --no-cache \
     libpq \
     libpq-dev \
     curl \
-    make
+    make \
+    curl-dev
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -26,8 +30,7 @@ RUN curl -sSL https://install.python-poetry.org | python3 - \
 COPY pyproject.toml poetry.lock ./
 
 # Build wheels for dependencies
-RUN export PATH="/root/.local/bin:$PATH" \
-    && pip install wheel \
+RUN pip install wheel \
     && poetry install --no-root \
     && poetry export --without-hashes -f requirements.txt -o requirements.txt \
     && pip wheel --no-cache-dir --wheel-dir=/wheels -r requirements.txt
