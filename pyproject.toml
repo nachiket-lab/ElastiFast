@@ -5,11 +5,14 @@ description = ""
 authors = ["nachiket vartak <nachiket.vartak@elastic.co>"]
 readme = "README.md"
 
+[tool.poetry.requires-plugins]
+poetry-plugin-export = ">=1.8"
+
 [tool.poetry.dependencies]
 python = "^3.11"
 elasticsearch = {extras = ["async"], version = "^8.15.0"}
 fastapi = "^0.112.1"
-celery = "^5.4.0"
+celery = {extras = ["sqs"], version = "^5.4.0"}
 elastic-apm = "^6.23.0"
 ecs-logging = "^2.2.0"
 pydantic-settings = "^2.5.2"
