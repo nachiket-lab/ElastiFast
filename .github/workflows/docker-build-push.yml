@@ -28,10 +28,10 @@ jobs:
           docker build \
             -t ghcr.io/${{ github.repository_owner }}/elastifast:${{ github.ref_name }} \
             -t ghcr.io/${{ github.repository_owner }}/elastifast:latest \
-            -t ghcr.io/${{ github.repository_owner }}/my-docker-image:${{ github.sha }} .
+            -t ghcr.io/${{ github.repository_owner }}/elastifast:${{ github.sha }} .
 
       - name: Push Docker image
         run: |
           docker push ghcr.io/${{ github.repository_owner }}/elastifast:${{ github.ref_name }}
           docker push ghcr.io/${{ github.repository_owner }}/elastifast:latest
-          docker push ghcr.io/${{ github.repository_owner }}/my-docker-image:${{ github.sha }}
+          docker push ghcr.io/${{ github.repository_owner }}/elastifast:${{ github.sha }}

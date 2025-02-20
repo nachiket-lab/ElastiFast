@@ -50,7 +50,6 @@ class JiraAuditLogIngestor(AbstractAPIClient):
         start_at = 0
 
         while True:
-            print("Entering loop for get events")
             self.params = {
                 "offset": start_at,
                 "limit": DEFAULT_LIMIT,
@@ -59,9 +58,6 @@ class JiraAuditLogIngestor(AbstractAPIClient):
             }
             try:
                 data = self.fetch_data()
-                print(
-                    f"loop for get events {data.get('total', 0)} exist. Records: {len(data.get("records", 0))}"
-                )
             except requests.exceptions.RequestException as e:
                 logger.error(f"Error fetching records: {e}")
                 raise
