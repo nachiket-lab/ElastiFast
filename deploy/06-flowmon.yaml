@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flowmon
+  namespace: elastifast
+  labels:
+    app: flowmon
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flowmon
+  template:
+    metadata:
+      labels:
+        app: flowmon
+    spec:
+      containers:
+        - name: flowmon
+          image: ghcr.io/nachiket-lab/elastifast:latest
+          env:
+            - name: FLOWER_PORT
+              value: "5555"
+            - name: FLOWER_BASIC_AUTH
+              value: "flower:flower"
+          command: ["celery", "-A", "elastifast.tasks", "flower"]
+          ports:
+            - containerPort: 5555
+          volumeMounts:
+            - name: settings-volume
+              mountPath: /app/settings.yaml
+              subPath: settings.yaml # Mount only the settings.yaml file
+      volumes:
+        - name: settings-volume
+          secret:
+            secretName: elastifast-settings
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: flowmon
+  namespace: elastifast
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: alb
+spec:
+  selector:
+    app: flowmon
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 5555
+  type: LoadBalancer

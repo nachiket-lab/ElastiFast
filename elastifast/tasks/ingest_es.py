@@ -1,5 +1,5 @@
-from email import message
-
+import datetime
+import zoneinfo
 from elasticsearch.helpers import BulkIndexError, bulk
 
 from elastifast.config.logging import logger
@@ -16,6 +16,8 @@ class ElasticsearchIngestData:
         for item in self.data:
             item["_index"] = self.index_name
             item["_op_type"] = "create"
+            if not "@timestamp" in item.keys():
+                item["@timestamp"] = datetime.datetime.now(tz=zoneinfo.ZoneInfo("UTC")).isoformat()
 
     def run(self):
         try:
@@ -30,9 +32,9 @@ class ElasticsearchIngestData:
             self.message = f"Data ingested by {self.esclient.__class__.__name__}:  success={res[0]} events, failure={res[1]} events"
         except BulkIndexError as e:
             self.message = f"Indexing error while ingesting data: {e.errors}."
-            logger.error(message)
+            logger.error(self.message)
             raise
         except Exception as e:
             self.message = f"Error of type {type(e)} occured while ingesting data: {e}."
-            logger.error(message)
+            logger.error(self.message)
             raise
