@@ -41,22 +41,22 @@ if settings.celery_beat_schedule is True:
         "ingest_data_from_atlassian": {
             "task": "elastifast.tasks.ingest_data_from_atlassian",
             "schedule": crontab(minute=f"*/{settings.celery_beat_interval}"),
-            "args": (settings.celery_beat_schedule, "atlassian.admin", namespace),
+            "args": (settings.celery_beat_schedule, namespace),
         },
         "ingest_data_from_jira": {
             "task": "elastifast.tasks.ingest_data_from_jira",
             "schedule": crontab(minute=f"*/{settings.celery_beat_interval}"),
-            "args": (settings.celery_beat_schedule, "jira.audit", namespace),
+            "args": (settings.celery_beat_schedule, namespace),
         },
         "ingest_data_from_zendesk": {
             "task": "elastifast.tasks.ingest_data_from_zendesk",
             "schedule": crontab(minute=f"*/{settings.celery_beat_interval}"),
-            "args": (settings.celery_beat_schedule, "zendesk.audit", namespace),
+            "args": (settings.celery_beat_schedule, namespace),
         },
         "ingest_data_from_postman": {
             "task": "elastifast.tasks.ingest_data_from_postman",
             "schedule": crontab(minute=f"*/{settings.celery_beat_interval}"),
-            "args": (settings.celery_beat_schedule, "postman", namespace),
+            "args": (settings.celery_beat_schedule, namespace),
         },
     }
 

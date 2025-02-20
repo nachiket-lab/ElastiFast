@@ -1,31 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: celery-worker
+  name: celery-beat
   namespace: elastifast
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
-      app: celery-worker
+      app: celery-beat
   template:
     metadata:
       labels:
-        app: celery-worker
+        app: celery-beat
     spec:
       containers:
-        - name: celery-worker
+        - name: celery-beat
           image: ghcr.io/nachiket-lab/elastifast:latest
           command:
             #            ["sleep", "300000"]
-            [
-              "celery",
-              "-A",
-              "elastifast.tasks",
-              "worker",
-              "--loglevel=info",
-              "-E",
-            ]
+            ["celery", "-A", "elastifast.tasks", "beat", "--loglevel=info"]
           volumeMounts:
             - name: settings-volume
               mountPath: /app/settings.yaml
