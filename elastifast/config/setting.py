@@ -1,6 +1,6 @@
-from re import I
 from typing import Optional
 from urllib.parse import quote
+import ast
 import yaml
 from elasticapm.contrib.starlette import ElasticAPM, make_apm_client
 from pydantic import AnyUrl, ValidationError, field_validator, model_validator
@@ -151,6 +151,17 @@ class Settings(BaseSettings):
                 "Invalid Celery broker URL. Must be one of: redis, amqp, amqps, sqs."
             )
         return value
+    
+    @field_validator("celery_broker_transport_options", mode="before")
+    def validate_celery_broker_transport_options(cls, value):
+        if isinstance(value, str):
+            try:
+                return ast.literal_eval(value)
+            except ValueError:
+                raise ValueError("Invalid JSON format for Celery broker transport options")
+        else:
+            return value
+
 
 
 # Load settings from YAML file or environment variables
