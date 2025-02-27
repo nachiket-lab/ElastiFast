@@ -33,6 +33,7 @@ celery_app = Celery(
     "ElastiFast",
     broker=str(settings.celery_broker_url),
     backend=str(settings.celery_result_backend),
+    broker_transport_options=settings.celery_broker_transport_options,
 )
 namespace = "default"
 

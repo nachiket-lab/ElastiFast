@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     elasticsearch_ssl_ca: Optional[str] = None
     elasticsearch_verify_certs: Optional[bool] = True
     celery_broker_url: AnyUrl
+    celery_broker_transport_options: Optional[dict] = None
     # celery_result_backend: AnyUrl
     elasticapm_service_name: Optional[str] = "elastifast"
     elasticapm_server_url: Optional[AnyUrl] = None
