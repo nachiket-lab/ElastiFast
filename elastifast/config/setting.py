@@ -155,7 +155,7 @@ class Settings(BaseSettings):
         if isinstance(value, str):
             try:
                 return ast.literal_eval(value)
-            except ValueError:
+            except (ValueError, SyntaxError):
                 raise ValueError("Invalid JSON format for Celery broker transport options")
         else:
             return value
