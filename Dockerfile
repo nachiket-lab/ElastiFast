@@ -13,7 +13,8 @@ RUN apk add --no-cache \
     libpq-dev \
     curl \
     make \
-    curl-dev
+    curl-dev \
+    openssl-dev
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -40,7 +41,7 @@ FROM python:3.11-alpine AS production
 
 # Install runtime dependencies
 RUN apk add --no-cache \
-    libstdc++
+    libstdc++ curl-dev openssl-dev
 #    libpq \
 
 # Set environment variables

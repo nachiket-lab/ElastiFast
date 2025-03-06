@@ -1,6 +1,6 @@
-from re import I
 from typing import Optional
 from urllib.parse import quote
+import ast
 import yaml
 from elasticapm.contrib.starlette import ElasticAPM, make_apm_client
 from pydantic import AnyUrl, ValidationError, field_validator, model_validator
@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     elasticsearch_ssl_ca: Optional[str] = None
     elasticsearch_verify_certs: Optional[bool] = True
     celery_broker_url: AnyUrl
+    celery_broker_transport_options: Optional[dict] = None
     # celery_result_backend: AnyUrl
     elasticapm_service_name: Optional[str] = "elastifast"
     elasticapm_server_url: Optional[AnyUrl] = None
@@ -43,8 +44,6 @@ class Settings(BaseSettings):
     zendesk_api_key: Optional[str] = None
     zendesk_tenant: Optional[str] = None
     postman_secret_token: Optional[str] = None
-    celery_index_name: Optional[str] = "logs-celery.results-default"
-    celery_index_patterns: Optional[list] = ["logs-celery.results-*"]
     celery_beat_schedule: Optional[bool] = False
     celery_beat_interval: Optional[int] = 5
 
@@ -150,6 +149,17 @@ class Settings(BaseSettings):
                 "Invalid Celery broker URL. Must be one of: redis, amqp, amqps, sqs."
             )
         return value
+    
+    @field_validator("celery_broker_transport_options", mode="before")
+    def validate_celery_broker_transport_options(cls, value):
+        if isinstance(value, str):
+            try:
+                return ast.literal_eval(value)
+            except (ValueError, SyntaxError):
+                raise ValueError("Invalid JSON format for Celery broker transport options")
+        else:
+            return value
+
 
 
 # Load settings from YAML file or environment variables

@@ -1,0 +1,44 @@
+version: "3.8"
+
+services:
+  fastapi:
+    image: ghcr.io/nachiket-lab/elastifast:latest
+    container_name: elastifast-api
+    depends_on:
+      - redis
+      - celery-worker
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env  # Load environment variables from .env file
+    command: uvicorn elastifast.app.main:app
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  celery-worker:
+    image: ghcr.io/nachiket-lab/elastifast:latest
+    container_name: elastifast-worker
+    depends_on:
+      - redis
+    env_file:
+      - .env
+    command: celery -A elastifast.tasks worker --loglevel=info
+
+  celery-beat:
+    image: ghcr.io/nachiket-lab/elastifast:latest
+    container_name: elastifast-beat
+    depends_on:
+      - redis
+      - celery-worker
+    env_file:
+      - .env
+    command: celery -A elastifast.tasks beat --loglevel=info
+
+networks:
+  default:
+    name: elastifast-network

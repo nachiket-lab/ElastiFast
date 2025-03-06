@@ -33,6 +33,7 @@ celery_app = Celery(
     "ElastiFast",
     broker=str(settings.celery_broker_url),
     backend=str(settings.celery_result_backend),
+    broker_transport_options=settings.celery_broker_transport_options,
 )
 namespace = "default"
 
@@ -69,10 +70,17 @@ def setup_task_logger(logger, *args, **kwargs):
 
 @celery_app.on_after_configure.connect
 def setup_tasks(sender, **kwargs):
+    celery_index_name = "logs-celery.results"
+    celery_index_patterns = ["logs-celery.results-*"]
+    celery_logs_index_name = "logs-celery.logs"
+    celery_logs_index_patterns = ["logs-celery.beat-*", "logs-celery.fastapi-*", "logs-celery.worker-*"]
     ensure_es_deps(
-        pipeline_id=settings.celery_index_name,
-        template_name=settings.celery_index_name,
-        index_patterns=settings.celery_index_patterns,
+        unique_id=celery_index_name,
+        index_patterns=celery_index_patterns,
+    )
+    ensure_es_deps(
+        unique_id=celery_logs_index_name,
+        index_patterns=celery_logs_index_patterns,
     )
 
 
