@@ -44,8 +44,6 @@ class Settings(BaseSettings):
     zendesk_api_key: Optional[str] = None
     zendesk_tenant: Optional[str] = None
     postman_secret_token: Optional[str] = None
-    celery_index_name: Optional[str] = "logs-celery.results-default"
-    celery_index_patterns: Optional[list] = ["logs-celery.results-*"]
     celery_beat_schedule: Optional[bool] = False
     celery_beat_interval: Optional[int] = 5
 

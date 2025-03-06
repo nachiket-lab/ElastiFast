@@ -1,6 +1,8 @@
 # ElastiFast
 
-ElastiFast is a high-performance, scalable logging and observability framework designed to ingest, process, and analyze data efficiently using Elasticsearch, Celery, and FireLens. This project provides deep integration with various services such as Atlassian, Jira, Postman, and Zendesk, ensuring seamless data collection and analysis.
+ElastiFast is a high-performance, scalable logging and observability framework designed to ingest, process, and analyze data efficiently using Elasticsearch, Celery, and Message Queues. This project provides the ability to pull data from various APIs using paginated requests and the ability to retry failed tasks to avoid transient issues.
+
+The aim of the project is to provide a easy to use starter template for running a task scheduler that has a native integration with Elasticsearch. All the task results, logs, and even traces are pushed to Elasticsearch in order to 
 
 ## Architecture
 
