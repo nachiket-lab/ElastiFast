@@ -7,6 +7,7 @@
 venv/
 env/
 .env
+**/.env
 settings.yaml
 .env_backup
 
@@ -25,4 +26,4 @@ config/*.ini
 __pycache__
 config.ini
 
-deploy/*secret*.yaml
+deploy/**/*secret*.yaml
