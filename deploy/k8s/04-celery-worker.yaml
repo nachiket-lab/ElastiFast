@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-worker
+  namespace: elastifast
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: celery-worker
+  template:
+    metadata:
+      labels:
+        app: celery-worker
+    spec:
+      containers:
+        - name: celery-worker
+          image: ghcr.io/nachiket-lab/elastifast:latest
+          command:
+            [
+              "celery",
+              "-A",
+              "elastifast.tasks",
+              "worker",
+              "--loglevel=info",
+              "-E",
+            ]
+          volumeMounts:
+            - name: settings-volume
+              mountPath: /app/settings.yaml
+              subPath: settings.yaml # Mount only the settings.yaml file
+      volumes:
+        - name: settings-volume
+          secret:
+            secretName: elastifast-settings

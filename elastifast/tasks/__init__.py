@@ -33,6 +33,7 @@ celery_app = Celery(
     "ElastiFast",
     broker=str(settings.celery_broker_url),
     backend=str(settings.celery_result_backend),
+    broker_transport_options=settings.celery_broker_transport_options,
 )
 namespace = "default"
 
@@ -41,22 +42,22 @@ if settings.celery_beat_schedule is True:
         "ingest_data_from_atlassian": {
             "task": "elastifast.tasks.ingest_data_from_atlassian",
             "schedule": crontab(minute=f"*/{settings.celery_beat_interval}"),
-            "args": (settings.celery_beat_schedule, "atlassian.admin", namespace),
+            "args": (settings.celery_beat_schedule, namespace),
         },
         "ingest_data_from_jira": {
             "task": "elastifast.tasks.ingest_data_from_jira",
             "schedule": crontab(minute=f"*/{settings.celery_beat_interval}"),
-            "args": (settings.celery_beat_schedule, "jira.audit", namespace),
+            "args": (settings.celery_beat_schedule, namespace),
         },
         "ingest_data_from_zendesk": {
             "task": "elastifast.tasks.ingest_data_from_zendesk",
             "schedule": crontab(minute=f"*/{settings.celery_beat_interval}"),
-            "args": (settings.celery_beat_schedule, "zendesk.audit", namespace),
+            "args": (settings.celery_beat_schedule, namespace),
         },
         "ingest_data_from_postman": {
             "task": "elastifast.tasks.ingest_data_from_postman",
             "schedule": crontab(minute=f"*/{settings.celery_beat_interval}"),
-            "args": (settings.celery_beat_schedule, "postman", namespace),
+            "args": (settings.celery_beat_schedule, namespace),
         },
     }
 
@@ -70,9 +71,12 @@ def setup_task_logger(logger, *args, **kwargs):
 @celery_app.on_after_configure.connect
 def setup_tasks(sender, **kwargs):
     ensure_es_deps(
-        pipeline_id=settings.celery_index_name,
-        template_name=settings.celery_index_name,
+        unique_id=settings.celery_index_name,
         index_patterns=settings.celery_index_patterns,
+    )
+    ensure_es_deps(
+        unique_id=settings.celery_logs_index_name,
+        index_patterns=settings.celery_logs_index_patterns,
     )
 
 
