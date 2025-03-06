@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     celery_index_name: Optional[str] = "logs-celery.results"
     celery_index_patterns: Optional[list] = ["logs-celery.results-*"]
     celery_logs_index_name: Optional[str] = "logs-celery.logs"
-    celery_logs_index_patterns = ["logs-celery.beat-*", "logs-celery.fastapi-*", "logs-celery.worker-*"]
+    celery_logs_index_patterns: Optional[list] = ["logs-celery.beat-*", "logs-celery.fastapi-*", "logs-celery.worker-*"]
     elasticapm_secret_token: Optional[str] = None
     elasticsearch_celery_username: Optional[str] = None
     elasticsearch_celery_password: Optional[str] = None
