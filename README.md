@@ -48,7 +48,7 @@ ElastiFast requires several environment variables to be set. These variables can
 | `atlassian_org_id`                 | Atlassian organization ID                        |
 | `atlassian_secret_token`           | Atlassian API token                              |
 | `jira_url`                         | Jira instance URL                                |
-| `jira_username`                    | Jira account userna me                           |
+| `jira_username`                    | Jira account username                            |
 | `jira_api_key`                     | Jira API key                                     |
 | `postman_secret_token`             | Postman API token                                |
 | `zendesk_username`                 | Zendesk username                                 |
